@@ -1,16 +1,24 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
+import dynamic from 'next/dynamic'
 import { createClient } from '@/lib/supabase/client'
-import { HeroBackground } from '@/components/HeroBackground'
+import { SupabaseClient } from '@supabase/supabase-js'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
-import { Eye, EyeOff, Loader2, GraduationCap, Users, Mail, ArrowRight } from 'lucide-react'
+import { Eye, EyeOff, Loader2, GraduationCap, Users, Mail, ArrowRight, Camera, X } from 'lucide-react'
 import { Role } from '@/lib/types'
+
+// Lazy load HeroBackground to avoid blocking initial render
+const HeroBackground = dynamic(
+  () => import('@/components/HeroBackground').then((mod) => ({ default: mod.HeroBackground })),
+  { ssr: false }
+)
 
 interface FormData {
   firstName: string
@@ -21,6 +29,7 @@ interface FormData {
   institution: string
   role: Role | ''
   specialization: string
+  title: string
   motivation: string
   linkedinUrl: string
 }
@@ -35,6 +44,7 @@ export default function RegisterPage() {
     institution: '',
     role: '',
     specialization: '',
+    title: '',
     motivation: '',
     linkedinUrl: '',
   })
@@ -43,10 +53,38 @@ export default function RegisterPage() {
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormData, string>>>({})
   const [isLoading, setIsLoading] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const updateField = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
     setFieldErrors((prev) => ({ ...prev, [field]: '' }))
+  }
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Photo must be less than 5MB')
+        return
+      }
+      if (!file.type.startsWith('image/')) {
+        setError('Please select an image file')
+        return
+      }
+      setPhotoFile(file)
+      setPhotoPreview(URL.createObjectURL(file))
+      setError('')
+    }
+  }
+
+  const removePhoto = () => {
+    setPhotoFile(null)
+    setPhotoPreview(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
   }
 
   const validateForm = (): boolean => {
@@ -68,6 +106,35 @@ export default function RegisterPage() {
     return Object.keys(errors).length === 0
   }
 
+  // Upload photo in background - returns photo URL or null
+  const uploadPhotoInBackground = async (
+    supabase: SupabaseClient,
+    userId: string,
+    file: File
+  ): Promise<string | null> => {
+    const fileExt = file.name.split('.').pop()
+    const filePath = `${userId}/avatar.${fileExt}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, file, { upsert: true })
+
+    if (uploadError) {
+      console.error('Photo upload error:', uploadError)
+      return null
+    }
+
+    const { data } = supabase.storage.from('avatars').getPublicUrl(filePath)
+
+    // Update the profile with photo_url after upload completes
+    await supabase
+      .from('profiles')
+      .update({ photo_url: data.publicUrl })
+      .eq('id', userId)
+
+    return data.publicUrl
+  }
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -76,6 +143,7 @@ export default function RegisterPage() {
 
     setIsLoading(true)
 
+    // Create supabase client once
     const supabase = createClient()
 
     // 1. Create auth user (email confirmation required)
@@ -99,7 +167,7 @@ export default function RegisterPage() {
       return
     }
 
-    // 2. Save ALL profile data to localStorage for the complete-profile page to use
+    // 2. Save profile data to localStorage IMMEDIATELY (don't wait for photo)
     const profileData = {
       id: authData.user.id,
       full_name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
@@ -107,13 +175,23 @@ export default function RegisterPage() {
       phone: formData.phone.trim() || null,
       role: formData.role as Role,
       specialization: formData.specialization.trim() || null,
+      title: formData.title.trim() || null,
       motivation: formData.motivation.trim() || null,
       linkedin_url: formData.linkedinUrl.trim() || null,
       institution: formData.institution.trim() || null,
+      photo_url: null, // Will be updated by background upload
     }
     localStorage.setItem('dana_pending_profile', JSON.stringify(profileData))
 
-    // 3. Show check email message on this page
+    // 3. Start photo upload in background (fire and forget)
+    if (photoFile) {
+      // Don't await - let it run in background
+      uploadPhotoInBackground(supabase, authData.user.id, photoFile).catch((err) => {
+        console.error('Background photo upload failed:', err)
+      })
+    }
+
+    // 4. Show check email message immediately
     setIsLoading(false)
     setEmailSent(true)
   }
@@ -151,8 +229,8 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
-      {/* Left Panel - Hero Background with Quote */}
-      <div className="hidden lg:flex relative overflow-hidden">
+      {/* Left Panel - Hero Background with Quote (lazy loaded) */}
+      <div className="hidden lg:flex relative overflow-hidden bg-gradient-to-br from-[#1B2A72] to-[#4F63D2]">
         <HeroBackground />
         <div className="relative z-10 flex flex-col items-start justify-between p-12">
           <Link href="/" className="inline-block">
@@ -160,7 +238,7 @@ export default function RegisterPage() {
               DANA Connect
             </span>
           </Link>
-          
+
           <div className="max-w-sm">
             <blockquote className="space-y-4">
               <p className="font-heading text-3xl font-bold text-white leading-tight">
@@ -175,7 +253,7 @@ export default function RegisterPage() {
       </div>
 
       {/* Right Panel - Registration Form */}
-      <div className="bg-white flex flex-col items-center justify-center py-12 px-4 lg:py-20 lg:px-12">
+      <div className="bg-white flex flex-col items-center justify-center py-12 px-4 lg:py-20 lg:px-12 overflow-y-auto">
         <div className="w-full max-w-md">
           {/* Mobile Header */}
           <div className="lg:hidden mb-8 text-center">
@@ -208,6 +286,50 @@ export default function RegisterPage() {
               <h3 className="font-heading font-semibold text-[var(--primary)] text-sm uppercase tracking-wide">
                 Personal Details
               </h3>
+
+              {/* Photo Upload */}
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  {photoPreview ? (
+                    <div className="relative w-20 h-20">
+                      <Image
+                        src={photoPreview}
+                        alt="Profile preview"
+                        fill
+                        className="rounded-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={removePhoto}
+                        className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-20 h-20 rounded-full bg-[#E8E9F8] flex items-center justify-center text-[#1B2A72] hover:bg-[#DDDDF0] transition-colors"
+                    >
+                      <Camera className="w-6 h-6" />
+                    </button>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                    className="hidden"
+                  />
+                </div>
+                <div className="flex-1">
+                  <Label className="text-xs font-medium">Profile Photo (Optional)</Label>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                    Add a photo to personalize your profile. Max 5MB.
+                  </p>
+                </div>
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
@@ -298,6 +420,17 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-1">
+                <Label htmlFor="title" className="text-xs font-medium">Title / Position</Label>
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => updateField('title', e.target.value)}
+                  placeholder="e.g., PhD Student, Research Fellow, Professor"
+                  className="border-[1.5px] border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
+
+              <div className="space-y-1">
                 <Label htmlFor="institution" className="text-xs font-medium">Institution / University</Label>
                 <Input
                   id="institution"
@@ -377,25 +510,25 @@ export default function RegisterPage() {
               </h3>
 
               <div className="space-y-1">
-                <Label htmlFor="specialization" className="text-xs font-medium">Your Specialization</Label>
-                <Textarea
+                <Label htmlFor="specialization" className="text-xs font-medium">Your Specialization (for tag)</Label>
+                <Input
                   id="specialization"
                   value={formData.specialization}
                   onChange={(e) => updateField('specialization', e.target.value)}
-                  placeholder="e.g., Machine Learning, Biomedical Engineering..."
-                  rows={2}
+                  placeholder="e.g., Machine Learning, Biomedical Engineering"
                   className="border-[1.5px] border-[var(--border)] rounded-lg px-3 py-2 text-sm"
                 />
+                <p className="text-xs text-[var(--text-muted)]">This will appear as a tag on your profile card</p>
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="motivation" className="text-xs font-medium">Why join DANA Connect?</Label>
+                <Label htmlFor="motivation" className="text-xs font-medium">Bio / Why join DANA Connect?</Label>
                 <Textarea
                   id="motivation"
                   value={formData.motivation}
                   onChange={(e) => updateField('motivation', e.target.value)}
-                  placeholder="Your goals and what you hope to achieve..."
-                  rows={2}
+                  placeholder="Tell us about yourself and what you hope to achieve..."
+                  rows={3}
                   className="border-[1.5px] border-[var(--border)] rounded-lg px-3 py-2 text-sm"
                 />
               </div>

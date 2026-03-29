@@ -8,6 +8,8 @@ import { OpportunityCard } from '@/components/OpportunityCard'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { translations } from '@/lib/i18n/translations'
 
 interface OpportunityWithMentor {
   id: string
@@ -26,6 +28,8 @@ interface ResearchPageClientProps {
 
 export default function ResearchPageClient({ opportunities }: ResearchPageClientProps) {
   const router = useRouter()
+  const { language } = useLanguage()
+  const t = translations[language]
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
 
   // Collect all unique tags
@@ -55,19 +59,18 @@ export default function ResearchPageClient({ opportunities }: ResearchPageClient
       <section className="relative py-16 lg:py-20 overflow-hidden">
         <HeroBackground />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-          <span className="section-label">PIONEER LAB</span>
-          <h1 className="font-heading text-[42px] lg:text-[52px] font-bold text-[var(--primary)] leading-tight">
-            Research Opportunities
+          <span className="section-label">{t.pages.research.heroLabel}</span>
+          <h1 className="font-heading text-[42px] lg:text-[52px] font-extrabold text-[#1B2A72] leading-tight">
+            {t.pages.research.heroTitle}
           </h1>
           <p className="text-xl text-[var(--text-secondary)] mt-4 max-w-2xl mx-auto">
-            Discover hands-on research positions with leading scientists and institutions
-            across Kazakhstan. Find your next breakthrough.
+            {t.pages.research.heroSubtitle}
           </p>
         </div>
       </section>
 
       {/* Opportunities */}
-      <section className="py-16 lg:py-24 bg-page flex-1">
+      <section className="py-16 lg:py-24 bg-white flex-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {opportunities.length > 0 ? (
             <>
@@ -78,11 +81,11 @@ export default function ResearchPageClient({ opportunities }: ResearchPageClient
                     onClick={() => setSelectedTag(null)}
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                       selectedTag === null
-                        ? 'bg-[var(--primary)] text-white'
-                        : 'bg-hero text-[var(--primary)] hover:bg-[var(--border)]'
+                        ? 'bg-[#1B2A72] text-white'
+                        : 'bg-[#EEEDF8] text-[#1B2A72] hover:bg-[#E2E4F0]'
                     }`}
                   >
-                    All
+                    {t.pages.research.filterAll}
                   </button>
                   {allTags.map((tag) => (
                     <button
@@ -90,8 +93,8 @@ export default function ResearchPageClient({ opportunities }: ResearchPageClient
                       onClick={() => setSelectedTag(tag)}
                       className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                         selectedTag === tag
-                          ? 'bg-[var(--primary)] text-white'
-                          : 'bg-hero text-[var(--primary)] hover:bg-[var(--border)]'
+                          ? 'bg-[#1B2A72] text-white'
+                          : 'bg-[#EEEDF8] text-[#1B2A72] hover:bg-[#E2E4F0]'
                       }`}
                     >
                       {tag}
@@ -123,24 +126,23 @@ export default function ResearchPageClient({ opportunities }: ResearchPageClient
               {filteredOpportunities.length === 0 && (
                 <div className="text-center py-12">
                   <p className="text-[var(--text-secondary)]">
-                    No opportunities match the selected filter.
+                    {t.pages.research.filterNoMatches}
                   </p>
                 </div>
               )}
             </>
           ) : (
-            <div className="text-center py-20 surface-card">
+            <div className="text-center py-20 bg-[#EEEDF8] rounded-2xl border border-[var(--border)]">
               <div className="max-w-md mx-auto">
-                <h2 className="font-heading text-2xl font-bold text-[var(--primary)] mb-4">
-                  No Opportunities Available
+                <h2 className="font-heading text-2xl font-extrabold text-[#1B2A72] mb-4">
+                  {t.pages.research.emptyTitle}
                 </h2>
                 <p className="text-[var(--text-secondary)] mb-8">
-                  There are currently no open research opportunities. Check back soon or
-                  register as a mentor to post your own.
+                  {t.pages.research.emptyBody}
                 </p>
                 <Link href="/register">
                   <Button className="bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white rounded-lg px-6">
-                    Become a Mentor
+                    {t.pages.research.emptyButton}
                   </Button>
                 </Link>
               </div>

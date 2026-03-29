@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { Playfair_Display, DM_Sans } from "next/font/google";
+import { Inter, DM_Sans } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 import "./globals.css";
 
-const playfair = Playfair_Display({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-playfair",
+  variable: "--font-inter",
   display: "swap",
 });
 
@@ -16,8 +17,8 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "DANA Connect | Women in STEM Kazakhstan",
-  description: "A mentorship platform connecting women in STEM across Kazakhstan with mentors and research opportunities.",
+  title: "DANA Connect | Women in STEM & Research Sciences",
+  description: "A mentorship platform connecting women in STEM & Research Sciences across Kazakhstan with mentors and research opportunities.",
 };
 
 export default function RootLayout({
@@ -26,10 +27,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${playfair.variable} ${dmSans.variable}`}>
+    <html lang="en" className={`${inter.variable} ${dmSans.variable}`}>
       <body className="font-body antialiased bg-page text-primary">
-        {children}
-        <Toaster position="top-right" />
+        <LanguageProvider>
+          {children}
+          <Toaster position="top-right" />
+        </LanguageProvider>
       </body>
     </html>
   );

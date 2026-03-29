@@ -1,9 +1,10 @@
 'use client'
 
-import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Beaker, Clock, Users } from 'lucide-react'
+import { Beaker, Clock, User } from 'lucide-react'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { translations } from '@/lib/i18n/translations'
 
 interface OpportunityCardProps {
   title: string
@@ -28,99 +29,93 @@ export function OpportunityCard({
   filled_spots,
   duration,
   mentor_name,
-  mentor_institution,
   showApplyButton = false,
   onApply,
   isApplied = false,
   isFull = false,
 }: OpportunityCardProps) {
-  const spotsRemaining = total_spots - filled_spots
-  const fillPercentage = (filled_spots / total_spots) * 100
+  const { language } = useLanguage()
+  const t = translations[language]
+
+  const remainingSpots = Math.max(0, total_spots - filled_spots)
 
   const action = isApplied ? (
-    <Badge className="bg-green-100 text-green-700 hover:bg-green-100">✓ Applied</Badge>
+    <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+      ✓ {t.common.applied}
+    </Badge>
   ) : isFull ? (
-    <Badge className="bg-gray-100 text-gray-600 hover:bg-gray-100">Full</Badge>
+    <Badge className="bg-gray-100 text-gray-600 hover:bg-gray-100">{t.common.full}</Badge>
   ) : (
     <Button
       onClick={onApply}
-      className="bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white rounded-lg px-6 btn-hover-lift"
+      className="bg-[#1B2A72] hover:bg-[#2d3f99] text-white rounded-full px-6 btn-hover-lift"
     >
-      Apply
+      {t.common.apply}
     </Button>
   )
 
   return (
-    <Card className="surface-card transition-all duration-300 ease-out">
-      <CardContent className="p-6">
-        <div className="flex gap-4 items-start">
-          {/* Icon */}
-          <div className="flex-shrink-0">
-            <div className="w-12 h-12 rounded-lg bg-[var(--primary)] flex items-center justify-center">
-              <Beaker className="w-6 h-6 text-white" strokeWidth={1.8} />
-            </div>
+    <div className="bg-white border border-[#E2E4F0] rounded-xl p-6 transition-all duration-200 ease-out hover:-translate-y-[1px] hover:shadow-lg">
+      <div className="flex gap-4 items-start">
+        {/* Icon box - 40px navy rounded square with flask icon */}
+        <div className="flex-shrink-0">
+          <div className="w-10 h-10 rounded-lg bg-[#1B2A72] flex items-center justify-center">
+            <Beaker className="w-5 h-5 text-white" strokeWidth={1.8} />
           </div>
+        </div>
 
-          <div className="flex-1 min-w-0">
-            <h3 className="font-heading font-semibold text-lg text-[var(--primary)] mb-2 line-clamp-2">
-              {title}
-            </h3>
-            <p className="text-[var(--text-secondary)] text-sm mb-3 line-clamp-2">
-              {description}
-            </p>
+        <div className="flex-1 min-w-0">
+          {/* Title - bold */}
+          <h3 className="font-heading font-bold text-lg text-[#1B2A72] mb-2 line-clamp-2">
+            {title}
+          </h3>
 
-            {mentor_name && (
-              <p className="text-[var(--text-secondary)] text-xs mb-3 font-medium">
-                <span className="text-[var(--text-muted)]">Mentor:</span> {mentor_name}
-                {mentor_institution && ` · ${mentor_institution}`}
-              </p>
-            )}
+          {/* Description */}
+          <p className="text-[var(--text-secondary)] text-sm mb-3 line-clamp-2">
+            {description}
+          </p>
 
-            {/* Duration and spots info */}
-            <div className="flex flex-wrap items-center gap-3 mb-4">
-              {duration && (
-                <span className="inline-flex items-center gap-1.5 bg-[var(--bg-hero)] text-[var(--text-secondary)] text-xs rounded-full px-2.5 py-1 font-medium">
-                  <Clock className="w-3 h-3" />
-                  {duration}
-                </span>
-              )}
-              <span className="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)] font-medium">
-                <Users className="w-3 h-3" />
-                {spotsRemaining} spot{spotsRemaining !== 1 ? 's' : ''} open
+          {/* Mentor name with person icon */}
+          {mentor_name && (
+            <div className="flex items-center gap-2 mb-3">
+              <User className="w-4 h-4 text-[var(--text-muted)]" />
+              <span className="text-[var(--text-secondary)] text-sm font-medium">
+                {mentor_name}
               </span>
             </div>
+          )}
 
-            {/* Tags */}
-            <div className="flex flex-wrap gap-2 mb-4">
-              {tags.map((tag, index) => (
-                <span key={index} className="tag-pill">
-                  {tag}
-                </span>
-              ))}
+          {/* Duration with clock icon */}
+          {duration && (
+            <div className="flex items-center gap-2 mb-4">
+              <Clock className="w-4 h-4 text-[var(--text-muted)]" />
+              <span className="text-[var(--text-secondary)] text-sm">
+                {duration}
+              </span>
             </div>
+          )}
 
-            {/* Spots Progress Bar */}
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-[var(--text-muted)] font-medium">
-                  Spots filled
-                </span>
-                <span className="text-xs font-bold text-[var(--text-secondary)]">
-                  {filled_spots}/{total_spots}
-                </span>
-              </div>
-              <div className="progress-bar">
-                <div 
-                  className="progress-bar-fill"
-                  style={{ width: `${fillPercentage}%` }}
-                />
-              </div>
-            </div>
+          {/* Field tags */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {tags.map((tag, index) => (
+              <span
+                key={index}
+                className="bg-[#EEEEF8] text-[#1B2A72] text-xs font-medium px-3 py-1 rounded-full"
+              >
+                {tag}
+              </span>
+            ))}
           </div>
 
-          {showApplyButton && <div className="flex-shrink-0">{action}</div>}
+          {/* Spots info */}
+          <div className="text-xs text-[var(--text-muted)]">
+            {t.common.spotsRemaining}: {remainingSpots}
+          </div>
         </div>
-      </CardContent>
-    </Card>
+
+        {/* Apply button */}
+        {showApplyButton && <div className="flex-shrink-0">{action}</div>}
+      </div>
+    </div>
   )
 }

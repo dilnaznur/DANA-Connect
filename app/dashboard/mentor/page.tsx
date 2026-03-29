@@ -2,14 +2,16 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { DashboardNav } from '@/components/DashboardNav'
 import { ApplicationCard } from '@/components/ApplicationCard'
 import { TagInput } from '@/components/TagInput'
 import { OpportunityCardSkeleton } from '@/components/LoadingSkeleton'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { translations } from '@/lib/i18n/translations'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Dialog,
   DialogContent,
@@ -32,7 +34,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { Profile, ResearchOpportunity, Application } from '@/lib/types'
-import { Plus, Loader2, Beaker, Mail } from 'lucide-react'
+import { Plus, Loader2, Beaker, Mail, Briefcase, FileText, FolderOpen } from 'lucide-react'
 
 const DURATION_OPTIONS = [
   '1 month',
@@ -46,6 +48,8 @@ const DURATION_OPTIONS = [
 export default function MentorDashboard() {
   const router = useRouter()
   const supabase = createClient()
+  const { language } = useLanguage()
+  const t = translations[language]
 
   const [profile, setProfile] = useState<Profile | null>(null)
   const [opportunities, setOpportunities] = useState<ResearchOpportunity[]>([])
@@ -168,7 +172,9 @@ export default function MentorDashboard() {
         data: { user },
       } = await supabase.auth.getUser()
       if (user) fetchOpportunities(user.id)
-      toast.success(`Opportunity ${opp.is_open ? 'closed' : 'opened'}`)
+      toast.success(
+        opp.is_open ? t.dashboard.toasts.opportunityClosed : t.dashboard.toasts.opportunityOpened
+      )
     }
   }
 
@@ -179,7 +185,7 @@ export default function MentorDashboard() {
       newOpp.duration === 'Custom' ? newOpp.customDuration : newOpp.duration
 
     if (!newOpp.title.trim() || !newOpp.description.trim()) {
-      toast.error('Title and description are required')
+      toast.error(t.dashboard.toasts.titleAndDescriptionRequired)
       return
     }
 
@@ -199,7 +205,7 @@ export default function MentorDashboard() {
     if (error) {
       toast.error(error.message)
     } else {
-      toast.success('Opportunity published!')
+      toast.success(t.dashboard.toasts.opportunityPublished)
       setIsDialogOpen(false)
       setNewOpp({
         title: '',
@@ -258,14 +264,14 @@ export default function MentorDashboard() {
         })
 
         if (!response.ok) {
-          toast.error('Application accepted, but email notification failed to send')
+          toast.error(t.dashboard.toasts.acceptedButEmailFailed)
         }
       } catch {
-        toast.error('Application accepted, but email notification failed to send')
+        toast.error(t.dashboard.toasts.acceptedButEmailFailed)
       }
     }
 
-    toast.success('Application accepted!')
+    toast.success(t.dashboard.toasts.applicationAccepted)
     if (profile) {
       fetchOpportunities(profile.id)
     }
@@ -279,7 +285,7 @@ export default function MentorDashboard() {
       .eq('id', app.id)
 
     if (!error) {
-      toast.success('Application rejected')
+      toast.success(t.dashboard.toasts.applicationRejected)
       fetchApplications(opportunities.map((o) => o.id))
     }
   }
@@ -291,7 +297,7 @@ export default function MentorDashboard() {
       : cvPath
 
     if (!normalizedPath) {
-      toast.error('Invalid CV path')
+      toast.error(t.dashboard.toasts.invalidCvPath)
       return
     }
 
@@ -300,7 +306,7 @@ export default function MentorDashboard() {
       .createSignedUrl(normalizedPath, 60)
 
     if (error || !data?.signedUrl) {
-      toast.error(error?.message || 'Failed to open CV')
+      toast.error(error?.message || t.dashboard.toasts.failedToOpenCv)
       return
     }
 
@@ -317,19 +323,19 @@ export default function MentorDashboard() {
       .list(profile.id)
 
     if (listError) {
-      toast.error('Failed to clean up CV files: ' + listError.message)
+      toast.error(`${t.dashboard.toasts.failedToCleanUpCvFiles}: ${listError.message}`)
       setIsDeleting(false)
       return
     }
 
     if (files && files.length > 0) {
-      const paths = files.map((file) => `${profile.id}/${file.name}`)
+      const paths = files.map((file: { name: string }) => `${profile.id}/${file.name}`)
       const { error: removeError } = await supabase.storage
         .from('cvs')
         .remove(paths)
 
       if (removeError) {
-        toast.error('Failed to clean up CV files: ' + removeError.message)
+        toast.error(`${t.dashboard.toasts.failedToCleanUpCvFiles}: ${removeError.message}`)
         setIsDeleting(false)
         return
       }
@@ -338,7 +344,7 @@ export default function MentorDashboard() {
     const { error } = await supabase.rpc('delete_user_account')
 
     if (error) {
-      toast.error('Failed to delete account: ' + error.message)
+      toast.error(`${t.dashboard.toasts.failedToDeleteAccount}: ${error.message}`)
       setIsDeleting(false)
       return
     }
@@ -376,23 +382,23 @@ export default function MentorDashboard() {
         <div className="bg-gradient-to-r from-[#1B2A72] to-[#4F63D2] border-b border-[var(--border)]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <h2 className="font-heading text-3xl font-bold text-white mb-6">
-              Welcome back, {profile.full_name.split(' ')[0]} ✨
+              {t.auth.welcomeBack}, {profile.full_name.split(' ')[0]} ✨
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-white/10 rounded-lg px-4 py-3 backdrop-blur-sm">
-                <div className="text-white/70 text-sm font-medium">Opportunities</div>
+                <div className="text-white/70 text-sm font-medium">{t.dashboard.stats.opportunities}</div>
                 <div className="font-heading text-3xl font-bold text-white mt-1">
                   {opportunities.length}
                 </div>
               </div>
               <div className="bg-white/10 rounded-lg px-4 py-3 backdrop-blur-sm">
-                <div className="text-white/70 text-sm font-medium">Applications</div>
+                <div className="text-white/70 text-sm font-medium">{t.dashboard.stats.applications}</div>
                 <div className="font-heading text-3xl font-bold text-white mt-1">
                   {applications.length}
                 </div>
               </div>
               <div className="bg-white/10 rounded-lg px-4 py-3 backdrop-blur-sm">
-                <div className="text-white/70 text-sm font-medium">Pending</div>
+                <div className="text-white/70 text-sm font-medium">{t.dashboard.stats.pending}</div>
                 <div className="font-heading text-3xl font-bold text-white mt-1">
                   {pendingCount}
                 </div>
@@ -405,293 +411,333 @@ export default function MentorDashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="font-heading text-3xl font-bold text-[var(--primary)]">
-            Manage Your Opportunities
+            {t.dashboard.mentor}
           </h1>
           <p className="text-[var(--text-secondary)] mt-2">
-            Track applications and manage your research projects
+            {t.dashboard.subtitleMentor}
           </p>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="bg-white border border-[var(--border)] mb-6">
-            <TabsTrigger value="opportunities">My Opportunities</TabsTrigger>
-            <TabsTrigger value="applications" className="relative">
-              Applications
-              {pendingCount > 0 && (
-                <span className="ml-2 bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full">
-                  {pendingCount}
-                </span>
-              )}
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="opportunities">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="font-heading text-xl font-semibold text-[var(--primary)]">
-                Research Opportunities
-              </h2>
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger
-                  render={
-                    <Button className="bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white rounded-lg">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Post New Opportunity
-                    </Button>
-                  }
-                />
-                <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle className="font-heading">
-                      Post New Opportunity
-                    </DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4 pt-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="title">Title *</Label>
-                      <Input
-                        id="title"
-                        value={newOpp.title}
-                        onChange={(e) =>
-                          setNewOpp({ ...newOpp, title: e.target.value })
-                        }
-                        placeholder="e.g., Machine Learning Research Assistant"
-                        className="border-[1.5px] border-[var(--border)] rounded-lg"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="description">Description *</Label>
-                      <Textarea
-                        id="description"
-                        value={newOpp.description}
-                        onChange={(e) =>
-                          setNewOpp({ ...newOpp, description: e.target.value })
-                        }
-                        placeholder="Describe the research opportunity, responsibilities, and requirements..."
-                        rows={5}
-                        className="border-[1.5px] border-[var(--border)] rounded-lg"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Tags</Label>
-                      <TagInput
-                        value={newOpp.tags}
-                        onChange={(tags) => setNewOpp({ ...newOpp, tags })}
-                        placeholder="Add tags (e.g., AI, Bioinformatics)"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="spots">Total Spots</Label>
-                        <Input
-                          id="spots"
-                          type="number"
-                          min={1}
-                          value={newOpp.total_spots}
-                          onChange={(e) =>
-                            setNewOpp({
-                              ...newOpp,
-                              total_spots: parseInt(e.target.value) || 1,
-                            })
-                          }
-                          className="border-[1.5px] border-[var(--border)] rounded-lg"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Duration</Label>
-                        <Select
-                          value={newOpp.duration}
-                          onValueChange={(value) =>
-                            setNewOpp({ ...newOpp, duration: value || '' })
-                          }
-                        >
-                          <SelectTrigger className="border-[1.5px] border-[var(--border)] rounded-lg">
-                            <SelectValue placeholder="Select duration" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {DURATION_OPTIONS.map((opt) => (
-                              <SelectItem key={opt} value={opt}>
-                                {opt}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    {newOpp.duration === 'Custom' && (
-                      <div className="space-y-2">
-                        <Label htmlFor="customDuration">Custom Duration</Label>
-                        <Input
-                          id="customDuration"
-                          value={newOpp.customDuration}
-                          onChange={(e) =>
-                            setNewOpp({
-                              ...newOpp,
-                              customDuration: e.target.value,
-                            })
-                          }
-                          placeholder="e.g., 2 weeks, Summer semester"
-                          className="border-[1.5px] border-[var(--border)] rounded-lg"
-                        />
-                      </div>
-                    )}
-                    <Button
-                      onClick={handlePostOpportunity}
-                      disabled={isSubmitting}
-                      className="w-full bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white rounded-lg"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Publishing...
-                        </>
-                      ) : (
-                        'Publish Opportunity'
-                      )}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+        {/* Two-column layout: Sidebar + Content */}
+        <div className="flex gap-8">
+          {/* Left Sidebar */}
+          <div className="w-56 flex-shrink-0">
+            <div className="bg-white border-r border-[var(--border)] min-h-[400px] rounded-xl pt-6 px-3">
+              <nav className="space-y-1">
+                <button
+                  onClick={() => setActiveTab('opportunities')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                    activeTab === 'opportunities'
+                      ? 'bg-[#EEEDF8] text-[#1B2A72] font-semibold'
+                      : 'text-[var(--text-secondary)] hover:bg-[#F5F5FB]'
+                  }`}
+                >
+                  <Briefcase className="w-5 h-5" />
+                  {t.dashboard.sidebar.myOpportunities}
+                </button>
+                <button
+                  onClick={() => setActiveTab('applications')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                    activeTab === 'applications'
+                      ? 'bg-[#EEEDF8] text-[#1B2A72] font-semibold'
+                      : 'text-[var(--text-secondary)] hover:bg-[#F5F5FB]'
+                  }`}
+                >
+                  <FileText className="w-5 h-5" />
+                  {t.dashboard.sidebar.applications}
+                  {pendingCount > 0 && (
+                    <span className="ml-auto bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full font-medium">
+                      {pendingCount}
+                    </span>
+                  )}
+                </button>
+                <Link
+                  href="/projects"
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors text-[var(--text-secondary)] hover:bg-[#F5F5FB]"
+                >
+                  <FolderOpen className="w-5 h-5" />
+                  {t.dashboard.sidebar.myProjects}
+                </Link>
+              </nav>
             </div>
+          </div>
 
-            {opportunities.length > 0 ? (
-              <div className="space-y-4">
-                {opportunities.map((opp) => (
-                  <Card
-                    key={opp.id}
-                    className="bg-white border border-[var(--border)] rounded-2xl shadow-card"
-                  >
-                    <CardContent className="p-6">
-                      <div className="flex gap-4">
-                        <div className="flex-shrink-0">
-                          <div className="w-12 h-12 rounded-xl bg-[var(--primary)] flex items-center justify-center">
-                            <Beaker className="w-6 h-6 text-white" />
+          {/* Right Content Area */}
+          <div className="flex-1 min-w-0">
+            {/* Opportunities Tab Content */}
+            {activeTab === 'opportunities' && (
+              <>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="font-heading text-xl font-semibold text-[var(--primary)]">
+                    {t.dashboard.sections.researchOpportunities}
+                  </h2>
+                  <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <DialogTrigger
+                      render={
+                        <Button className="bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white rounded-lg">
+                          <Plus className="w-4 h-4 mr-2" />
+                          {t.dashboard.actions.postNewOpportunity}
+                        </Button>
+                      }
+                    />
+                    <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle className="font-heading">
+                          {t.dashboard.actions.postNewOpportunity}
+                        </DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4 pt-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="title">Title *</Label>
+                          <Input
+                            id="title"
+                            value={newOpp.title}
+                            onChange={(e) =>
+                              setNewOpp({ ...newOpp, title: e.target.value })
+                            }
+                            placeholder="e.g., Machine Learning Research Assistant"
+                            className="border-[1.5px] border-[var(--border)] rounded-lg"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="description">Description *</Label>
+                          <Textarea
+                            id="description"
+                            value={newOpp.description}
+                            onChange={(e) =>
+                              setNewOpp({ ...newOpp, description: e.target.value })
+                            }
+                            placeholder="Describe the research opportunity, responsibilities, and requirements..."
+                            rows={5}
+                            className="border-[1.5px] border-[var(--border)] rounded-lg"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Tags</Label>
+                          <TagInput
+                            value={newOpp.tags}
+                            onChange={(tags) => setNewOpp({ ...newOpp, tags })}
+                            placeholder="Add tags (e.g., AI, Bioinformatics)"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="spots">Total Spots</Label>
+                            <Input
+                              id="spots"
+                              type="number"
+                              min={1}
+                              value={newOpp.total_spots}
+                              onChange={(e) =>
+                                setNewOpp({
+                                  ...newOpp,
+                                  total_spots: parseInt(e.target.value) || 1,
+                                })
+                              }
+                              className="border-[1.5px] border-[var(--border)] rounded-lg"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Duration</Label>
+                            <Select
+                              value={newOpp.duration}
+                              onValueChange={(value) =>
+                                setNewOpp({ ...newOpp, duration: value || '' })
+                              }
+                            >
+                              <SelectTrigger className="border-[1.5px] border-[var(--border)] rounded-lg">
+                                <SelectValue placeholder="Select duration" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {DURATION_OPTIONS.map((opt) => (
+                                  <SelectItem key={opt} value={opt}>
+                                    {opt}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
-                        <div className="flex-1">
-                          <div className="flex justify-between items-start mb-2">
-                            <h3 className="font-heading font-semibold text-xl text-[var(--primary)]">
-                              {opp.title}
-                            </h3>
-                            <div className="flex items-center gap-3">
-                              <Badge
-                                variant={opp.is_open ? 'default' : 'secondary'}
-                                className={
-                                  opp.is_open
-                                    ? 'bg-green-100 text-green-700'
-                                    : 'bg-gray-100 text-gray-600'
-                                }
-                              >
-                                {opp.is_open ? 'Open' : 'Closed'}
-                              </Badge>
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm text-[var(--text-muted)]">
-                                  {opp.is_open ? 'Close' : 'Open'}
-                                </span>
-                                <Switch
-                                  checked={opp.is_open}
-                                  onCheckedChange={() => handleToggleOpen(opp)}
-                                />
+                        {newOpp.duration === 'Custom' && (
+                          <div className="space-y-2">
+                            <Label htmlFor="customDuration">Custom Duration</Label>
+                            <Input
+                              id="customDuration"
+                              value={newOpp.customDuration}
+                              onChange={(e) =>
+                                setNewOpp({
+                                  ...newOpp,
+                                  customDuration: e.target.value,
+                                })
+                              }
+                              placeholder="e.g., 2 weeks, Summer semester"
+                              className="border-[1.5px] border-[var(--border)] rounded-lg"
+                            />
+                          </div>
+                        )}
+                        <Button
+                          onClick={handlePostOpportunity}
+                          disabled={isSubmitting}
+                          className="w-full bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white rounded-lg"
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              {t.dashboard.actions.publishing}
+                            </>
+                          ) : (
+                            t.dashboard.actions.publishOpportunity
+                          )}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
+                {opportunities.length > 0 ? (
+                  <div className="space-y-4">
+                    {opportunities.map((opp) => (
+                      <Card
+                        key={opp.id}
+                        className="bg-white border border-[var(--border)] rounded-2xl shadow-card"
+                      >
+                        <CardContent className="p-6">
+                          <div className="flex gap-4">
+                            <div className="flex-shrink-0">
+                              <div className="w-12 h-12 rounded-xl bg-[var(--primary)] flex items-center justify-center">
+                                <Beaker className="w-6 h-6 text-white" />
                               </div>
                             </div>
-                          </div>
-                          <p className="text-[var(--text-secondary)] text-sm mb-3">
-                            {opp.description}
-                          </p>
-                          <div className="flex flex-wrap items-center gap-4 mb-3">
-                            <span className="text-sm text-[var(--text-muted)]">
-                              {opp.filled_spots} / {opp.total_spots} spots filled
-                            </span>
-                            {opp.duration && (
-                              <span className="text-sm text-[var(--text-muted)]">
-                                Duration: {opp.duration}
-                              </span>
-                            )}
-                          </div>
-                          {opp.tags && opp.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-2">
-                              {opp.tags.map((tag, i) => (
-                                <span key={i} className="tag-pill">
-                                  {tag}
+                            <div className="flex-1">
+                              <div className="flex justify-between items-start mb-2">
+                                <h3 className="font-heading font-semibold text-xl text-[var(--primary)]">
+                                  {opp.title}
+                                </h3>
+                                <div className="flex items-center gap-3">
+                                  <Badge
+                                    variant={opp.is_open ? 'default' : 'secondary'}
+                                    className={
+                                      opp.is_open
+                                        ? 'bg-green-100 text-green-700'
+                                        : 'bg-gray-100 text-gray-600'
+                                    }
+                                  >
+                                    {opp.is_open ? t.dashboard.status.open : t.dashboard.status.closed}
+                                  </Badge>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm text-[var(--text-muted)]">
+                                      {opp.is_open ? t.dashboard.status.closeAction : t.dashboard.status.openAction}
+                                    </span>
+                                    <Switch
+                                      checked={opp.is_open}
+                                      onCheckedChange={() => handleToggleOpen(opp)}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                              <p className="text-[var(--text-secondary)] text-sm mb-3">
+                                {opp.description}
+                              </p>
+                              <div className="flex flex-wrap items-center gap-4 mb-3">
+                                <span className="text-sm text-[var(--text-muted)]">
+                                  {opp.filled_spots} / {opp.total_spots} {t.dashboard.status.spotsFilled}
                                 </span>
-                              ))}
+                                {opp.duration && (
+                                  <span className="text-sm text-[var(--text-muted)]">
+                                    {t.dashboard.status.duration}: {opp.duration}
+                                  </span>
+                                )}
+                              </div>
+                              {opp.tags && opp.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                  {opp.tags.map((tag, i) => (
+                                    <span key={i} className="tag-pill">
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
                             </div>
-                          )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-20 bg-white rounded-2xl border border-[var(--border)]">
+                    <h3 className="font-heading text-xl font-semibold text-[var(--primary)] mb-2">
+                      {t.dashboard.empty.noOpportunitiesYetTitle}
+                    </h3>
+                    <p className="text-[var(--text-secondary)] mb-6">
+                      {t.dashboard.empty.noOpportunitiesYetDescription}
+                    </p>
+                    <Button
+                      onClick={() => setIsDialogOpen(true)}
+                      className="bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white rounded-lg"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      {t.dashboard.actions.postYourFirstOpportunity}
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Applications Tab Content */}
+            {activeTab === 'applications' && (
+              <>
+                <h2 className="font-heading text-xl font-semibold text-[var(--primary)] mb-6">
+                  {t.dashboard.sections.applicationsByOpportunity}
+                </h2>
+
+                {applications.length > 0 ? (
+                  <div className="space-y-8">
+                    {opportunities.map((opp) => {
+                      const oppApplications = applications.filter((app) => app.opportunity_id === opp.id)
+                      if (oppApplications.length === 0) return null
+
+                      return (
+                        <div key={opp.id}>
+                          <div className="flex items-center gap-4 mb-6 pb-4 border-b-2 border-[var(--border)]">
+                            <h3 className="font-heading text-xl font-bold text-[var(--primary)]">
+                              {opp.title}
+                            </h3>
+                            <span className="text-sm bg-[var(--bg-hero)] text-[var(--text-secondary)] px-3 py-1 rounded-full font-medium">
+                              {oppApplications.length} application{oppApplications.length !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                          <div className="space-y-3">
+                            {oppApplications.map((app) => (
+                              <ApplicationCard
+                                key={app.id}
+                                application={app}
+                                showMenteeContact
+                                showActions
+                                onViewCv={handleViewCv}
+                                onAccept={() => handleAcceptApplication(app)}
+                                onReject={() => handleRejectApplication(app)}
+                              />
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-20 bg-white rounded-2xl border border-[var(--border)]">
-                <h3 className="font-heading text-xl font-semibold text-[var(--primary)] mb-2">
-                  No Opportunities Yet
-                </h3>
-                <p className="text-[var(--text-secondary)] mb-6">
-                  You haven&apos;t posted any research opportunities yet.
-                </p>
-                <Button
-                  onClick={() => setIsDialogOpen(true)}
-                  className="bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white rounded-lg"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Post Your First Opportunity
-                </Button>
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="applications">
-            <h2 className="font-heading text-xl font-semibold text-[var(--primary)] mb-6">
-              Applications by Opportunity
-            </h2>
-
-            {applications.length > 0 ? (
-              <div className="space-y-8">
-                {opportunities.map((opp) => {
-                  const oppApplications = applications.filter((app) => app.opportunity_id === opp.id)
-                  if (oppApplications.length === 0) return null
-
-                  return (
-                    <div key={opp.id}>
-                      <div className="flex items-center gap-4 mb-6 pb-4 border-b-2 border-[var(--border)]">
-                        <h3 className="font-heading text-xl font-bold text-[var(--primary)]">
-                          {opp.title}
-                        </h3>
-                        <span className="text-sm bg-[var(--bg-hero)] text-[var(--text-secondary)] px-3 py-1 rounded-full font-medium">
-                          {oppApplications.length} application{oppApplications.length !== 1 ? 's' : ''}
-                        </span>
-                      </div>
-                      <div className="space-y-3">
-                        {oppApplications.map((app) => (
-                          <ApplicationCard
-                            key={app.id}
-                            application={app}
-                            showMenteeContact
-                            showActions
-                            onViewCv={handleViewCv}
-                            onAccept={() => handleAcceptApplication(app)}
-                            onReject={() => handleRejectApplication(app)}
-                          />
-                        ))}
-                      </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="empty-state bg-white rounded-2xl border border-[var(--border)]">
+                    <div className="empty-state-icon">
+                      <Mail className="w-16 h-16 mx-auto" />
                     </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <div className="empty-state bg-white rounded-2xl border border-[var(--border)]">
-                <div className="empty-state-icon">
-                  <Mail className="w-16 h-16 mx-auto" />
-                </div>
-                <h3 className="empty-state-heading">No Applications Yet</h3>
-                <p className="empty-state-text">
-                  Applications from mentees will appear here once they apply to your research opportunities.
-                </p>
-              </div>
+                    <h3 className="empty-state-heading">{t.dashboard.empty.noApplicationsYetTitle}</h3>
+                    <p className="empty-state-text">
+                      {t.dashboard.empty.noApplicationsYetDescriptionMentor}
+                    </p>
+                  </div>
+                )}
+              </>
             )}
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
 
         <div className="mt-10 flex justify-end">
           <Dialog
@@ -709,22 +755,20 @@ export default function MentorDashboard() {
                   size="sm"
                   className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
                 >
-                  Delete Account
+                  {t.dashboard.deleteAccount.button}
                 </Button>
               }
             />
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle className="font-heading">Delete your account?</DialogTitle>
+                <DialogTitle className="font-heading">{t.dashboard.deleteAccount.title}</DialogTitle>
                 <DialogDescription className="text-[var(--text-secondary)]">
-                  This will permanently delete your account, all your data,
-                  research opportunities, and applications. This action cannot
-                  be undone.
+                  {t.dashboard.deleteAccount.description}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 pt-2">
                 <div className="space-y-2">
-                  <Label htmlFor="delete-confirm-mentor">Type &quot;DELETE&quot; to confirm</Label>
+                  <Label htmlFor="delete-confirm-mentor">{t.dashboard.deleteAccount.typeDeleteToConfirm}</Label>
                   <Input
                     id="delete-confirm-mentor"
                     value={confirmText}
@@ -743,7 +787,7 @@ export default function MentorDashboard() {
                     }}
                     disabled={isDeleting}
                   >
-                    Cancel
+                    {t.common.cancel}
                   </Button>
                   <Button
                     onClick={handleDeleteAccount}
@@ -753,10 +797,10 @@ export default function MentorDashboard() {
                     {isDeleting ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Deleting...
+                        {t.dashboard.deleteAccount.deleting}
                       </>
                     ) : (
-                      'Delete My Account'
+                      t.dashboard.deleteAccount.deleteMyAccount
                     )}
                   </Button>
                 </div>

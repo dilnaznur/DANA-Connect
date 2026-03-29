@@ -3,14 +3,14 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { translations } from '@/lib/i18n/translations'
 import { DashboardNav } from '@/components/DashboardNav'
 import { OpportunityCard } from '@/components/OpportunityCard'
 import { StatusBadge } from '@/components/StatusBadge'
-// StatusBadge used in application cards below
 import { OpportunityCardSkeleton } from '@/components/LoadingSkeleton'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Dialog,
   DialogContent,
@@ -22,21 +22,46 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-import { Profile, ResearchOpportunity, Application } from '@/lib/types'
-import { Loader2, Mail, Linkedin, ExternalLink } from 'lucide-react'
+import { Profile, ResearchOpportunity, Application, ProjectRequestStatus } from '@/lib/types'
+import { Loader2, Mail, Linkedin, ExternalLink, Search, FileText, FolderOpen, Send } from 'lucide-react'
 import { format } from 'date-fns'
 
 interface OpportunityWithMentor extends Omit<ResearchOpportunity, 'mentor'> {
   mentor: { full_name: string; institution: string | null } | null
 }
 
+interface ProjectRequestWithDetails {
+  id: string
+  project_id: string
+  requester_id: string
+  message: string | null
+  status: ProjectRequestStatus
+  created_at: string
+  updated_at: string
+  project: {
+    title: string
+    description: string
+    tags: string[]
+    contact_email: string | null
+    contact_telegram: string | null
+    creator_id: string
+    creator: {
+      full_name: string
+      email: string
+    } | null
+  } | null
+}
+
 export default function MenteeDashboard() {
   const router = useRouter()
   const supabase = createClient()
+  const { language } = useLanguage()
+  const t = translations[language]
 
   const [profile, setProfile] = useState<Profile | null>(null)
   const [opportunities, setOpportunities] = useState<OpportunityWithMentor[]>([])
   const [myApplications, setMyApplications] = useState<Application[]>([])
+  const [myProjectRequests, setMyProjectRequests] = useState<ProjectRequestWithDetails[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('browse')
 
@@ -104,6 +129,18 @@ export default function MenteeDashboard() {
     setMyApplications(data || [])
   }, [supabase])
 
+  const fetchMyProjectRequests = useCallback(async (userId: string) => {
+    const { data } = await supabase
+      .from('project_requests')
+      .select(`
+        *,
+        project:open_projects(title, description, tags, contact_email, contact_telegram, creator_id, creator:profiles(full_name, email))
+      `)
+      .eq('requester_id', userId)
+      .order('created_at', { ascending: false })
+    setMyProjectRequests((data as ProjectRequestWithDetails[]) || [])
+  }, [supabase])
+
   useEffect(() => {
     const init = async () => {
       const {
@@ -119,11 +156,12 @@ export default function MenteeDashboard() {
         fetchProfile(user.id),
         fetchOpportunities(),
         fetchMyApplications(user.id),
+        fetchMyProjectRequests(user.id),
       ])
       setIsLoading(false)
     }
     init()
-  }, [supabase, router, fetchProfile, fetchOpportunities, fetchMyApplications])
+  }, [supabase, router, fetchProfile, fetchOpportunities, fetchMyApplications, fetchMyProjectRequests])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -151,14 +189,14 @@ export default function MenteeDashboard() {
 
     if (!fileExt || !allowedExtensions.includes(fileExt)) {
       setCvFile(null)
-      setCvError('Only .pdf, .doc, and .docx files are allowed')
+      setCvError(t.dashboard.validation.onlyPdfDocDocxAllowed)
       return
     }
 
     const maxBytes = 5 * 1024 * 1024
     if (file.size > maxBytes) {
       setCvFile(null)
-      setCvError('File size must be 5MB or less')
+      setCvError(t.dashboard.validation.fileSizeMax5mb)
       return
     }
 
@@ -169,7 +207,7 @@ export default function MenteeDashboard() {
     if (!profile || !selectedOpp) return
 
     if (motivationText.length < 100) {
-      toast.error('Please write at least 100 characters')
+      toast.error(t.dashboard.toasts.appliedMinChars)
       return
     }
 
@@ -180,7 +218,7 @@ export default function MenteeDashboard() {
     if (cvFile) {
       const fileExt = cvFile.name.split('.').pop()?.toLowerCase()
       if (!fileExt) {
-        toast.error('Invalid CV file format')
+        toast.error(t.dashboard.toasts.invalidCvFileFormat)
         setIsSubmitting(false)
         return
       }
@@ -209,12 +247,12 @@ export default function MenteeDashboard() {
 
     if (error) {
       if (error.code === '23505') {
-        toast.error('You have already applied to this opportunity')
+        toast.error(t.dashboard.toasts.alreadyApplied)
       } else {
         toast.error(error.message)
       }
     } else {
-      toast.success('Application submitted successfully!')
+      toast.success(t.dashboard.toasts.applicationSubmitted)
       setSelectedOpp(null)
       setMotivationText('')
       setCvFile(null)
@@ -235,19 +273,19 @@ export default function MenteeDashboard() {
       .list(profile.id)
 
     if (listError) {
-      toast.error('Failed to clean up CV files: ' + listError.message)
+      toast.error(`${t.dashboard.toasts.failedToCleanUpCvFiles}: ${listError.message}`)
       setIsDeleting(false)
       return
     }
 
     if (files && files.length > 0) {
-      const paths = files.map((file) => `${profile.id}/${file.name}`)
+      const paths = files.map((file: { name: string }) => `${profile.id}/${file.name}`)
       const { error: removeError } = await supabase.storage
         .from('cvs')
         .remove(paths)
 
       if (removeError) {
-        toast.error('Failed to clean up CV files: ' + removeError.message)
+        toast.error(`${t.dashboard.toasts.failedToCleanUpCvFiles}: ${removeError.message}`)
         setIsDeleting(false)
         return
       }
@@ -256,7 +294,7 @@ export default function MenteeDashboard() {
     const { error } = await supabase.rpc('delete_user_account')
 
     if (error) {
-      toast.error('Failed to delete account: ' + error.message)
+      toast.error(`${t.dashboard.toasts.failedToDeleteAccount}: ${error.message}`)
       setIsDeleting(false)
       return
     }
@@ -292,23 +330,23 @@ export default function MenteeDashboard() {
         <div className="bg-gradient-to-r from-[#1B2A72] to-[#4F63D2] border-b border-[var(--border)]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <h2 className="font-heading text-3xl font-bold text-white mb-6">
-              Welcome back, {profile.full_name.split(' ')[0]} 🎓
+              {t.auth.welcomeBack}, {profile.full_name.split(' ')[0]} 🎓
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-white/10 rounded-lg px-4 py-3 backdrop-blur-sm">
-                <div className="text-white/70 text-sm font-medium">Active Opportunities</div>
+                <div className="text-white/70 text-sm font-medium">{t.dashboard.stats.activeOpportunities}</div>
                 <div className="font-heading text-3xl font-bold text-white mt-1">
                   {opportunities.length}
                 </div>
               </div>
               <div className="bg-white/10 rounded-lg px-4 py-3 backdrop-blur-sm">
-                <div className="text-white/70 text-sm font-medium">My Applications</div>
+                <div className="text-white/70 text-sm font-medium">{t.dashboard.stats.myApplications}</div>
                 <div className="font-heading text-3xl font-bold text-white mt-1">
                   {myApplications.length}
                 </div>
               </div>
               <div className="bg-white/10 rounded-lg px-4 py-3 backdrop-blur-sm">
-                <div className="text-white/70 text-sm font-medium">Profile Completion</div>
+                <div className="text-white/70 text-sm font-medium">{t.dashboard.stats.profileCompletion}</div>
                 <div className="font-heading text-3xl font-bold text-white mt-1">
                   100%
                 </div>
@@ -321,243 +359,441 @@ export default function MenteeDashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="font-heading text-3xl font-bold text-[var(--primary)]">
-            Explore & Apply
+            {t.dashboard.mentee}
           </h1>
           <p className="text-[var(--text-secondary)] mt-2">
-            Browse research opportunities and track your applications
+            {t.dashboard.subtitleMentee}
           </p>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="bg-white border border-[var(--border)] mb-6">
-            <TabsTrigger value="browse">Browse Opportunities</TabsTrigger>
-            <TabsTrigger value="applications">
-              My Applications
-              {myApplications.length > 0 && (
-                <span className="ml-2 bg-hero text-[var(--primary)] text-xs px-2 py-0.5 rounded-full">
-                  {myApplications.length}
-                </span>
-              )}
-            </TabsTrigger>
-          </TabsList>
+        {/* Two-column layout: Sidebar + Content */}
+        <div className="flex gap-8">
+          {/* Left Sidebar */}
+          <div className="w-56 flex-shrink-0">
+            <div className="bg-white border-r border-[var(--border)] min-h-[400px] rounded-xl pt-6 px-3">
+              <nav className="space-y-1">
+                <button
+                  onClick={() => setActiveTab('browse')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                    activeTab === 'browse'
+                      ? 'bg-[#EEEDF8] text-[#1B2A72] font-semibold'
+                      : 'text-[var(--text-secondary)] hover:bg-[#F5F5FB]'
+                  }`}
+                >
+                  <Search className="w-5 h-5" />
+                  {t.dashboard.sidebar.browseOpportunities}
+                </button>
+                <button
+                  onClick={() => setActiveTab('applications')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                    activeTab === 'applications'
+                      ? 'bg-[#EEEDF8] text-[#1B2A72] font-semibold'
+                      : 'text-[var(--text-secondary)] hover:bg-[#F5F5FB]'
+                  }`}
+                >
+                  <FileText className="w-5 h-5" />
+                  {t.dashboard.sidebar.myApplications}
+                  {myApplications.length > 0 && (
+                    <span className="ml-auto bg-[#EEEDF8] text-[#1B2A72] text-xs px-2 py-0.5 rounded-full font-medium">
+                      {myApplications.length}
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={() => setActiveTab('projects')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                    activeTab === 'projects'
+                      ? 'bg-[#EEEDF8] text-[#1B2A72] font-semibold'
+                      : 'text-[var(--text-secondary)] hover:bg-[#F5F5FB]'
+                  }`}
+                >
+                  <FolderOpen className="w-5 h-5" />
+                  {t.dashboard.sidebar.myProjects}
+                  {myProjectRequests.filter(r => r.status === 'pending' || r.status === 'accepted').length > 0 && (
+                    <span className="ml-auto bg-[#EEEDF8] text-[#1B2A72] text-xs px-2 py-0.5 rounded-full font-medium">
+                      {myProjectRequests.filter(r => r.status === 'pending' || r.status === 'accepted').length}
+                    </span>
+                  )}
+                </button>
+              </nav>
+            </div>
+          </div>
 
-          <TabsContent value="browse">
-            {opportunities.length > 0 ? (
+          {/* Right Content Area */}
+          <div className="flex-1 min-w-0">
+            {/* Browse Tab Content */}
+            {activeTab === 'browse' && (
               <>
-                {/* Tag Filter */}
-                {allTags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-6">
-                    <button
-                      onClick={() => setSelectedTag(null)}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                        selectedTag === null
-                          ? 'bg-[var(--primary)] text-white'
-                          : 'bg-hero text-[var(--primary)] hover:bg-[var(--border)]'
-                      }`}
-                    >
-                      All
-                    </button>
-                    {allTags.map((tag) => (
-                      <button
-                        key={tag}
-                        onClick={() => setSelectedTag(tag)}
-                        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                          selectedTag === tag
-                            ? 'bg-[var(--primary)] text-white'
-                            : 'bg-hero text-[var(--primary)] hover:bg-[var(--border)]'
-                        }`}
-                      >
-                        {tag}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                {opportunities.length > 0 ? (
+                  <>
+                    {/* Tag Filter */}
+                    {allTags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-6">
+                        <button
+                          onClick={() => setSelectedTag(null)}
+                          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                            selectedTag === null
+                              ? 'bg-[var(--primary)] text-white'
+                              : 'bg-hero text-[var(--primary)] hover:bg-[var(--border)]'
+                          }`}
+                        >
+                          {t.dashboard.filter.all}
+                        </button>
+                        {allTags.map((tag) => (
+                          <button
+                            key={tag}
+                            onClick={() => setSelectedTag(tag)}
+                            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                              selectedTag === tag
+                                ? 'bg-[var(--primary)] text-white'
+                                : 'bg-hero text-[var(--primary)] hover:bg-[var(--border)]'
+                            }`}
+                          >
+                            {tag}
+                          </button>
+                        ))}
+                      </div>
+                    )}
 
-                {/* Opportunities List */}
-                <div className="space-y-6">
-                  {filteredOpportunities.map((opp) => (
-                    <OpportunityCard
-                      key={opp.id}
-                      title={opp.title}
-                      description={opp.description}
-                      tags={opp.tags || []}
-                      total_spots={opp.total_spots}
-                      filled_spots={opp.filled_spots}
-                      duration={opp.duration}
-                      mentor_name={opp.mentor?.full_name}
-                      mentor_institution={opp.mentor?.institution || undefined}
-                      showApplyButton
-                      isApplied={appliedIds.has(opp.id)}
-                      isFull={opp.filled_spots >= opp.total_spots}
-                      onApply={() => handleApply(opp)}
-                    />
-                  ))}
-                </div>
+                    {/* Opportunities List */}
+                    <div className="space-y-6">
+                      {filteredOpportunities.map((opp) => (
+                        <OpportunityCard
+                          key={opp.id}
+                          title={opp.title}
+                          description={opp.description}
+                          tags={opp.tags || []}
+                          total_spots={opp.total_spots}
+                          filled_spots={opp.filled_spots}
+                          duration={opp.duration}
+                          mentor_name={opp.mentor?.full_name}
+                          mentor_institution={opp.mentor?.institution || undefined}
+                          showApplyButton
+                          isApplied={appliedIds.has(opp.id)}
+                          isFull={opp.filled_spots >= opp.total_spots}
+                          onApply={() => handleApply(opp)}
+                        />
+                      ))}
+                    </div>
 
-                {filteredOpportunities.length === 0 && (
-                  <div className="text-center py-12">
+                    {filteredOpportunities.length === 0 && (
+                      <div className="text-center py-12">
+                        <p className="text-[var(--text-secondary)]">
+                          {t.dashboard.filter.noMatches}
+                        </p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-20 bg-white rounded-2xl border border-[var(--border)]">
+                    <h3 className="font-heading text-xl font-semibold text-[var(--primary)] mb-2">
+                      {t.dashboard.empty.noOpportunitiesAvailableTitle}
+                    </h3>
                     <p className="text-[var(--text-secondary)]">
-                      No opportunities match the selected filter.
+                      {t.dashboard.empty.noOpportunitiesAvailableDescription}
                     </p>
                   </div>
                 )}
               </>
-            ) : (
-              <div className="text-center py-20 bg-white rounded-2xl border border-[var(--border)]">
-                <h3 className="font-heading text-xl font-semibold text-[var(--primary)] mb-2">
-                  No Opportunities Available
-                </h3>
-                <p className="text-[var(--text-secondary)]">
-                  No open research opportunities right now. Check back soon!
-                </p>
-              </div>
             )}
-          </TabsContent>
 
-          <TabsContent value="applications">
-            {myApplications.length > 0 ? (
-              <div className="space-y-4">
-                {myApplications.map((app) => {
-                  const opp = app.opportunity as {
-                    title: string
-                    tags: string[]
-                    mentor: {
-                      full_name: string
-                      email: string | null
-                      linkedin_url: string | null
-                    } | null
-                  } | null
+            {/* Applications Tab Content */}
+            {activeTab === 'applications' && (
+              <>
+                {myApplications.length > 0 ? (
+                  <div className="space-y-4">
+                    {myApplications.map((app) => {
+                      const opp = app.opportunity as {
+                        title: string
+                        tags: string[]
+                        mentor: {
+                          full_name: string
+                          email: string | null
+                          linkedin_url: string | null
+                        } | null
+                      } | null
 
-                  // Status dot color mapping
-                  const statusDotColor = {
-                    pending: 'bg-amber-500',
-                    viewed: 'bg-blue-500',
-                    accepted: 'bg-green-600',
-                    rejected: 'bg-red-600',
-                  }[app.status] || 'bg-gray-400'
+                      // Status dot color mapping
+                      const statusDotColor = {
+                        pending: 'bg-amber-500',
+                        viewed: 'bg-blue-500',
+                        accepted: 'bg-green-600',
+                        rejected: 'bg-red-600',
+                      }[app.status] || 'bg-gray-400'
 
-                  const statusLineColor = {
-                    pending: 'border-l-amber-500',
-                    viewed: 'border-l-blue-500',
-                    accepted: 'border-l-green-600',
-                    rejected: 'border-l-red-600',
-                  }[app.status] || 'border-l-gray-400'
+                      const statusLineColor = {
+                        pending: 'border-l-amber-500',
+                        viewed: 'border-l-blue-500',
+                        accepted: 'border-l-green-600',
+                        rejected: 'border-l-red-600',
+                      }[app.status] || 'border-l-gray-400'
 
-                  return (
-                    <div
-                      key={app.id}
-                      className={`relative pl-8 border-l-4 ${statusLineColor}`}
-                    >
-                      {/* Status Timeline Dot */}
-                      <div
-                        className={`absolute -left-2 top-6 w-3 h-3 rounded-full ${statusDotColor} ${
-                          app.status === 'pending' ? 'animate-pulse-badge' : ''
-                        }`}
-                      />
-                      
-                      <Card className="bg-white border border-[var(--border)] rounded-2xl shadow-card">
-                        <CardContent className="p-6">
-                        <div className="flex justify-between items-start mb-4">
-                          <div>
-                            <h3 className="font-heading font-semibold text-lg text-[var(--primary)]">
-                              {opp?.title}
-                            </h3>
-                            {opp?.mentor && (
-                              <p className="text-[var(--text-secondary)] text-sm">
-                                Mentor: {opp.mentor.full_name}
+                      return (
+                        <div
+                          key={app.id}
+                          className={`relative pl-8 border-l-4 ${statusLineColor}`}
+                        >
+                          {/* Status Timeline Dot */}
+                          <div
+                            className={`absolute -left-2 top-6 w-3 h-3 rounded-full ${statusDotColor} ${
+                              app.status === 'pending' ? 'animate-pulse-badge' : ''
+                            }`}
+                          />
+
+                          <Card className="bg-white border border-[var(--border)] rounded-2xl shadow-card">
+                            <CardContent className="p-6">
+                              <div className="flex justify-between items-start mb-4">
+                                <div>
+                                  <h3 className="font-heading font-semibold text-lg text-[var(--primary)]">
+                                    {opp?.title}
+                                  </h3>
+                                  {opp?.mentor && (
+                                    <p className="text-[var(--text-secondary)] text-sm">
+                                      {t.dashboard.status.mentor}: {opp.mentor.full_name}
+                                    </p>
+                                  )}
+                                </div>
+                                <StatusBadge status={app.status} />
+                              </div>
+
+                              <p className="text-[var(--text-muted)] text-sm mb-4">
+                                {t.dashboard.status.submitted}:{' '}
+                                {format(new Date(app.created_at), 'MMMM d, yyyy')}
                               </p>
-                            )}
-                          </div>
-                          <StatusBadge status={app.status} />
-                        </div>
 
-                        <p className="text-[var(--text-muted)] text-sm mb-4">
-                          Submitted:{' '}
-                          {format(new Date(app.created_at), 'MMMM d, yyyy')}
-                        </p>
-
-                        {app.status === 'viewed' && (
-                          <p className="text-blue-600 text-sm mb-4">
-                            The mentor has viewed your application
-                          </p>
-                        )}
-
-                        {app.status === 'accepted' && opp?.mentor && (
-                          <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 mb-4">
-                            <p className="text-green-700 text-sm font-medium mb-1">
-                              Congratulations! Your application was accepted.
-                            </p>
-                            <p className="text-green-700 text-sm mb-2">
-                              Contact your mentor:
-                            </p>
-                            <div className="space-y-1">
-                              {opp.mentor.email && (
-                                <a
-                                  href={`mailto:${opp.mentor.email}`}
-                                  className="inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:underline"
-                                >
-                                  <Mail className="w-4 h-4" />
-                                  Email: {opp.mentor.email}
-                                </a>
+                              {app.status === 'viewed' && (
+                                <p className="text-blue-600 text-sm mb-4">
+                                  {t.dashboard.dialogs.mentorViewed}
+                                </p>
                               )}
-                              {opp.mentor.linkedin_url && (
-                                <a
-                                  href={opp.mentor.linkedin_url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:underline"
-                                >
-                                  <Linkedin className="w-4 h-4" />
-                                  LinkedIn: {opp.mentor.linkedin_url}
-                                  <ExternalLink className="w-3 h-3" />
-                                </a>
+
+                              {app.status === 'accepted' && opp?.mentor && (
+                                <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 mb-4">
+                                  <p className="text-green-700 text-sm font-medium mb-1">
+                                    {t.dashboard.dialogs.acceptedCongrats}
+                                  </p>
+                                  <p className="text-green-700 text-sm mb-2">
+                                    {t.dashboard.status.contactYourMentor}
+                                  </p>
+                                  <div className="space-y-1">
+                                    {opp.mentor.email && (
+                                      <a
+                                        href={`mailto:${opp.mentor.email}`}
+                                        className="inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:underline"
+                                      >
+                                        <Mail className="w-4 h-4" />
+                                        {t.dashboard.status.email}: {opp.mentor.email}
+                                      </a>
+                                    )}
+                                    {opp.mentor.linkedin_url && (
+                                      <a
+                                        href={opp.mentor.linkedin_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:underline"
+                                      >
+                                        <Linkedin className="w-4 h-4" />
+                                        {t.dashboard.status.linkedin}: {opp.mentor.linkedin_url}
+                                        <ExternalLink className="w-3 h-3" />
+                                      </a>
+                                    )}
+                                  </div>
+                                </div>
                               )}
-                            </div>
-                          </div>
-                        )}
 
-                        <div className="bg-hero rounded-lg p-4">
-                          <Label className="text-xs text-[var(--text-muted)] mb-2 block">
-                            Your motivation
-                          </Label>
-                          <p className="text-[var(--text-secondary)] text-sm">
-                            {app.motivation_text}
-                          </p>
+                              <div className="bg-hero rounded-lg p-4">
+                                <Label className="text-xs text-[var(--text-muted)] mb-2 block">
+                                  {t.dashboard.dialogs.yourMotivation}
+                                </Label>
+                                <p className="text-[var(--text-secondary)] text-sm">
+                                  {app.motivation_text}
+                                </p>
+                              </div>
+
+                              {opp?.tags && opp.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mt-4">
+                                  {opp.tags.map((tag, i) => (
+                                    <span key={i} className="tag-pill">
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
                         </div>
-
-                        {opp?.tags && opp.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mt-4">
-                            {opp.tags.map((tag, i) => (
-                              <span key={i} className="tag-pill">
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-20 bg-white rounded-2xl border border-[var(--border)]">
-                <h3 className="font-heading text-xl font-semibold text-[var(--primary)] mb-2">
-                  No Applications Yet
-                </h3>
-                <p className="text-[var(--text-secondary)] mb-6">
-                  You haven&apos;t applied to any opportunities yet.
-                </p>
-                <Button
-                  onClick={() => setActiveTab('browse')}
-                  className="bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white rounded-lg"
-                >
-                  Browse Opportunities
-                </Button>
-              </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-20 bg-white rounded-2xl border border-[var(--border)]">
+                    <h3 className="font-heading text-xl font-semibold text-[var(--primary)] mb-2">
+                      {t.dashboard.empty.noApplicationsYetTitle}
+                    </h3>
+                    <p className="text-[var(--text-secondary)] mb-6">
+                      {t.dashboard.empty.noApplicationsYetDescriptionMentee}
+                    </p>
+                    <Button
+                      onClick={() => setActiveTab('browse')}
+                      className="bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white rounded-lg"
+                    >
+                      {t.dashboard.actions.browseOpportunities}
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
-          </TabsContent>
-        </Tabs>
+
+            {/* My Projects Tab Content */}
+            {activeTab === 'projects' && (
+              <>
+                {myProjectRequests.length > 0 ? (
+                  <div className="space-y-4">
+                    {myProjectRequests.map((request) => {
+                      const project = request.project
+
+                      const statusDotColor = {
+                        pending: 'bg-amber-500',
+                        accepted: 'bg-green-600',
+                        rejected: 'bg-red-600',
+                      }[request.status] || 'bg-gray-400'
+
+                      const statusLineColor = {
+                        pending: 'border-l-amber-500',
+                        accepted: 'border-l-green-600',
+                        rejected: 'border-l-red-600',
+                      }[request.status] || 'border-l-gray-400'
+
+                      const formatTelegramLink = (telegram: string) => {
+                        const username = telegram.startsWith('@') ? telegram.slice(1) : telegram
+                        return `https://t.me/${username}`
+                      }
+
+                      return (
+                        <div
+                          key={request.id}
+                          className={`relative pl-8 border-l-4 ${statusLineColor}`}
+                        >
+                          {/* Status Timeline Dot */}
+                          <div
+                            className={`absolute -left-2 top-6 w-3 h-3 rounded-full ${statusDotColor} ${
+                              request.status === 'pending' ? 'animate-pulse-badge' : ''
+                            }`}
+                          />
+
+                          <Card className="bg-white border border-[var(--border)] rounded-2xl shadow-card">
+                            <CardContent className="p-6">
+                              <div className="flex justify-between items-start mb-4">
+                                <div>
+                                  <h3 className="font-heading font-semibold text-lg text-[var(--primary)]">
+                                    {project?.title}
+                                  </h3>
+                                </div>
+                                <StatusBadge status={request.status} />
+                              </div>
+
+                              <p className="text-[var(--text-muted)] text-sm mb-4">
+                                {t.dashboard.status.submitted}:{' '}
+                                {format(new Date(request.created_at), 'MMMM d, yyyy')}
+                              </p>
+
+                              {request.status === 'accepted' && project && (
+                                <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 mb-4">
+                                  <p className="text-green-700 text-sm font-medium mb-1">
+                                    {t.dashboard.dialogs.acceptedProject}
+                                  </p>
+                                  <p className="text-green-700 text-sm mb-2">
+                                    {t.dashboard.status.contactProjectCreator}
+                                  </p>
+                                  <div className="space-y-1">
+                                    {project.creator && (
+                                      <p className="text-sm text-green-800 font-medium">
+                                        {project.creator.full_name}
+                                      </p>
+                                    )}
+                                    {project.contact_email && (
+                                      <a
+                                        href={`mailto:${project.contact_email}`}
+                                        className="inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:underline"
+                                      >
+                                        <Mail className="w-4 h-4" />
+                                        {project.contact_email}
+                                      </a>
+                                    )}
+                                    {project.contact_telegram && (
+                                      <a
+                                        href={formatTelegramLink(project.contact_telegram)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:underline"
+                                      >
+                                        <Send className="w-4 h-4" />
+                                        {t.dashboard.status.telegram}: {project.contact_telegram}
+                                        <ExternalLink className="w-3 h-3" />
+                                      </a>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
+                              {request.status === 'pending' && (
+                                <p className="text-amber-600 text-sm mb-4">
+                                  {t.dashboard.dialogs.waitingCreator}
+                                </p>
+                              )}
+
+                              {request.status === 'rejected' && (
+                                <p className="text-red-600 text-sm mb-4">
+                                  {t.dashboard.dialogs.rejectedRequest}
+                                </p>
+                              )}
+
+                              {request.message && (
+                                <div className="bg-hero rounded-lg p-4">
+                                  <Label className="text-xs text-[var(--text-muted)] mb-2 block">
+                                    {t.dashboard.dialogs.yourMessage}
+                                  </Label>
+                                  <p className="text-[var(--text-secondary)] text-sm">
+                                    {request.message}
+                                  </p>
+                                </div>
+                              )}
+
+                              {project?.tags && project.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mt-4">
+                                  {project.tags.map((tag, i) => (
+                                    <span key={i} className="tag-pill">
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-20 bg-white rounded-2xl border border-[var(--border)]">
+                    <h3 className="font-heading text-xl font-semibold text-[var(--primary)] mb-2">
+                      {t.dashboard.empty.noProjectRequestsYetTitle}
+                    </h3>
+                    <p className="text-[var(--text-secondary)] mb-6">
+                      {t.dashboard.empty.noProjectRequestsYetDescription}
+                    </p>
+                    <Button
+                      onClick={() => router.push('/projects')}
+                      className="bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white rounded-lg"
+                    >
+                      {t.dashboard.actions.browseOpenProjects}
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
 
         <div className="mt-10 flex justify-end">
           <Dialog
@@ -574,20 +810,18 @@ export default function MenteeDashboard() {
               onClick={() => setIsDeleteDialogOpen(true)}
               className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
             >
-              Delete Account
+              {t.dashboard.deleteAccount.button}
             </Button>
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle className="font-heading">Delete your account?</DialogTitle>
+                <DialogTitle className="font-heading">{t.dashboard.deleteAccount.title}</DialogTitle>
                 <DialogDescription className="text-[var(--text-secondary)]">
-                  This will permanently delete your account, all your data,
-                  research opportunities, and applications. This action cannot
-                  be undone.
+                  {t.dashboard.deleteAccount.description}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 pt-2">
                 <div className="space-y-2">
-                  <Label htmlFor="delete-confirm-mentee">Type &quot;DELETE&quot; to confirm</Label>
+                  <Label htmlFor="delete-confirm-mentee">{t.dashboard.deleteAccount.typeDeleteToConfirm}</Label>
                   <Input
                     id="delete-confirm-mentee"
                     value={confirmText}
@@ -606,7 +840,7 @@ export default function MenteeDashboard() {
                     }}
                     disabled={isDeleting}
                   >
-                    Cancel
+                    {t.common.cancel}
                   </Button>
                   <Button
                     onClick={handleDeleteAccount}
@@ -616,10 +850,10 @@ export default function MenteeDashboard() {
                     {isDeleting ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Deleting...
+                        {t.dashboard.deleteAccount.deleting}
                       </>
                     ) : (
-                      'Delete My Account'
+                      t.dashboard.deleteAccount.deleteMyAccount
                     )}
                   </Button>
                 </div>
@@ -643,10 +877,10 @@ export default function MenteeDashboard() {
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-heading">
-              Apply to: {selectedOpp?.title}
+              {t.dashboard.dialogs.applyTo}: {selectedOpp?.title}
             </DialogTitle>
             <DialogDescription className="text-[var(--text-secondary)]">
-              Mentor: {selectedOpp?.mentor?.full_name}
+              {t.dashboard.status.mentor}: {selectedOpp?.mentor?.full_name}
             </DialogDescription>
           </DialogHeader>
 
@@ -659,13 +893,13 @@ export default function MenteeDashboard() {
 
             <div className="space-y-2">
               <Label htmlFor="motivation">
-                Why do you want to join this research? *
+                {t.dashboard.dialogs.whyJoin}
               </Label>
               <Textarea
                 id="motivation"
                 value={motivationText}
                 onChange={(e) => setMotivationText(e.target.value)}
-                placeholder="Explain your interest, relevant experience, and what you hope to learn..."
+                placeholder={t.dashboard.dialogs.motivationPlaceholder}
                 rows={6}
                 className="border-[1.5px] border-[var(--border)] rounded-lg"
               />
@@ -676,13 +910,13 @@ export default function MenteeDashboard() {
                     : 'text-red-500'
                 }`}
               >
-                {motivationText.length} characters
-                {motivationText.length < 100 && ' (minimum 100)'}
+                {motivationText.length} {t.dashboard.dialogs.characters}
+                {motivationText.length < 100 && ` (${t.dashboard.dialogs.minimum100})`}
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="cvFile">Attach your CV (optional)</Label>
+              <Label htmlFor="cvFile">{t.dashboard.dialogs.attachCvOptional}</Label>
               <input
                 id="cvFile"
                 type="file"
@@ -692,7 +926,7 @@ export default function MenteeDashboard() {
               />
               {cvFile && (
                 <p className="text-sm text-[var(--text-secondary)]">
-                  Selected file: {cvFile.name}
+                  {t.dashboard.dialogs.selectedFile} {cvFile.name}
                 </p>
               )}
               {cvError && (
@@ -706,7 +940,7 @@ export default function MenteeDashboard() {
                 onClick={() => setSelectedOpp(null)}
                 className="border-[var(--border)]"
               >
-                Cancel
+                {t.common.cancel}
               </Button>
               <Button
                 onClick={handleSubmitApplication}
@@ -716,10 +950,10 @@ export default function MenteeDashboard() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Submitting...
+                    {t.dashboard.actions.submitting}
                   </>
                 ) : (
-                  'Submit Application →'
+                  t.dashboard.actions.submitApplication
                 )}
               </Button>
             </div>

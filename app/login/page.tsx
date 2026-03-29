@@ -11,6 +11,40 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 
+// Logo icon - octagon/infinity-loop circuit board symbol
+function LogoIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 32 32"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M10 2H22L30 10V22L22 30H10L2 22V10L10 2Z"
+        stroke="currentColor"
+        strokeWidth="2"
+        fill="none"
+      />
+      <path
+        d="M8 16C8 16 10 12 13 12C16 12 16 16 16 16C16 16 16 20 19 20C22 20 24 16 24 16C24 16 22 12 19 12C16 12 16 16 16 16C16 16 16 20 13 20C10 20 8 16 8 16Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        fill="none"
+        strokeLinecap="round"
+      />
+      <circle cx="10" cy="2" r="1.5" fill="currentColor" />
+      <circle cx="22" cy="2" r="1.5" fill="currentColor" />
+      <circle cx="30" cy="10" r="1.5" fill="currentColor" />
+      <circle cx="30" cy="22" r="1.5" fill="currentColor" />
+      <circle cx="22" cy="30" r="1.5" fill="currentColor" />
+      <circle cx="10" cy="30" r="1.5" fill="currentColor" />
+      <circle cx="2" cy="22" r="1.5" fill="currentColor" />
+      <circle cx="2" cy="10" r="1.5" fill="currentColor" />
+    </svg>
+  )
+}
+
 export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
@@ -57,24 +91,25 @@ export default function LoginPage() {
     <div className="min-h-screen relative overflow-hidden">
       {/* Full background with hero gradient */}
       <HeroBackground />
-      
+
       {/* Content overlay */}
       <div className="min-h-screen flex items-center justify-center px-4 relative z-10">
-        <Card className="w-full max-w-[420px] surface-card">
+        <Card className="w-full max-w-[420px] bg-white border border-[#E2E4F0] rounded-2xl shadow-lg">
           <CardHeader className="text-center pb-2">
-            <Link href="/" className="inline-block mb-8">
-              <span className="font-heading font-bold text-3xl bg-gradient-to-r from-[#1B2A72] to-[#4F63D2] bg-clip-text text-transparent">
+            <Link href="/" className="inline-flex items-center justify-center gap-2 mb-8">
+              <LogoIcon className="w-8 h-8 text-[#1B2A72]" />
+              <span className="font-heading font-extrabold text-3xl text-[#1B2A72]">
                 DANA Connect
               </span>
             </Link>
-            <h1 className="font-heading text-3xl font-bold text-[var(--primary)] mb-2">
+            <h1 className="font-heading text-3xl font-extrabold text-[#1B2A72] mb-2">
               Welcome Back
             </h1>
             <p className="text-[var(--text-secondary)] text-base">
               Sign in to your account to continue
             </p>
           </CardHeader>
-          
+
           <CardContent className="pt-6">
             <form onSubmit={handleLogin} className="space-y-5">
               <div className="space-y-2">
@@ -129,7 +164,7 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white rounded-lg px-6 py-3 h-auto font-medium btn-hover-lift mt-2"
+                className="w-full bg-[#1B2A72] hover:bg-[#2d3f99] text-white rounded-lg px-6 py-3 h-auto font-medium btn-hover-lift mt-2"
               >
                 {isLoading ? (
                   <>
@@ -155,7 +190,7 @@ export default function LoginPage() {
               Don&apos;t have an account?{' '}
               <Link
                 href="/register"
-                className="text-[var(--primary)] hover:text-[var(--primary-light)] font-semibold transition-colors"
+                className="text-[#1B2A72] hover:text-[#2d3f99] font-semibold transition-colors"
               >
                 Create one →
               </Link>

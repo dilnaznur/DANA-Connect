@@ -1,3 +1,5 @@
+"use client"
+
 import { NavBarClient } from '@/components/NavBarClient'
 
 export function NavBar() {

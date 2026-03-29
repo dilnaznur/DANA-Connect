@@ -1,5 +1,6 @@
 export type Role = 'mentor' | 'mentee'
 export type ApplicationStatus = 'pending' | 'viewed' | 'accepted' | 'rejected'
+export type ProjectRequestStatus = 'pending' | 'accepted' | 'rejected'
 
 export interface Profile {
   id: string
@@ -11,6 +12,8 @@ export interface Profile {
   motivation: string | null
   linkedin_url: string | null
   institution: string | null
+  title: string | null
+  photo_url: string | null
   created_at: string
   updated_at: string
 }
@@ -43,4 +46,33 @@ export interface Application {
   opportunity?: Pick<ResearchOpportunity, 'title' | 'tags'> & {
     mentor?: Pick<Profile, 'full_name' | 'email' | 'linkedin_url'>
   }
+}
+
+export interface Project {
+  id: string
+  creator_id: string
+  title: string
+  description: string
+  tags: string[]
+  contact_email: string | null
+  contact_telegram: string | null
+  deadline: string | null
+  max_members: number
+  filled_members: number
+  is_open: boolean
+  created_at: string
+  updated_at: string
+  creator?: Pick<Profile, 'full_name' | 'email' | 'institution'>
+}
+
+export interface ProjectRequest {
+  id: string
+  project_id: string
+  user_id: string
+  message: string | null
+  status: ProjectRequestStatus
+  created_at: string
+  updated_at: string
+  user?: Pick<Profile, 'full_name' | 'email' | 'institution'>
+  project?: Pick<Project, 'title'>
 }

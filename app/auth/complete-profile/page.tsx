@@ -74,9 +74,11 @@ export default function CompleteProfilePage() {
         phone: profileData.phone,
         role: profileData.role,
         specialization: profileData.specialization,
+        title: profileData.title,
         motivation: profileData.motivation,
         linkedin_url: profileData.linkedin_url,
         institution: profileData.institution,
+        photo_url: profileData.photo_url,
       })
 
       if (profileError) {

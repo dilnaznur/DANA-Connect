@@ -9,7 +9,7 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        heading: ["var(--font-playfair)", "serif"],
+        heading: ["var(--font-inter)", "system-ui", "sans-serif"],
         body: ["var(--font-dm-sans)", "system-ui", "sans-serif"],
       },
       colors: {
