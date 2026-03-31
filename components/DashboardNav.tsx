@@ -52,8 +52,8 @@ export function DashboardNav({ userName, onSignOut }: DashboardNavProps) {
   return (
     <nav className="bg-white border-b border-[var(--border)] sticky top-0 z-50 shadow-card">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-y-2 py-2 sm:py-0 sm:h-16">
+          <div className="flex items-center gap-4 w-full sm:w-auto min-w-0">
             <Link href="/" className="flex items-center gap-2">
               <LogoIcon className="w-7 h-7 text-[#1B2A72]" />
               <span className="font-heading font-extrabold text-xl text-[#1B2A72]">
@@ -68,8 +68,8 @@ export function DashboardNav({ userName, onSignOut }: DashboardNavProps) {
             </Link>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1">
+          <div className="flex items-center justify-between gap-3 w-full sm:w-auto sm:justify-end min-w-0">
+            <div className="flex items-center gap-1 flex-shrink-0">
               {(['en', 'ru', 'kz'] as const).map((lang) => (
                 <button
                   key={lang}
@@ -84,7 +84,7 @@ export function DashboardNav({ userName, onSignOut }: DashboardNavProps) {
                 </button>
               ))}
             </div>
-            <span className="text-[var(--text-secondary)] font-medium">
+            <span className="text-[var(--text-secondary)] font-medium min-w-0 truncate max-w-[140px] sm:max-w-none">
               {userName}
             </span>
             <Button

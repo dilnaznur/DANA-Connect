@@ -111,8 +111,8 @@ export function NavBarClient() {
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex flex-wrap items-center justify-between gap-y-2 py-2 md:py-0 md:h-16">
+          <Link href="/" className="flex items-center gap-2 flex-shrink-0 w-full md:w-auto">
             <LogoIcon className="w-7 h-7 text-[var(--primary)]" />
             <span className="font-heading font-bold text-xl text-[var(--primary)]">
               DANA Connect
@@ -154,9 +154,9 @@ export function NavBarClient() {
             )}
           </div>
 
-          <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
+          <div className="flex items-center justify-between gap-2 w-full md:w-auto md:justify-end md:gap-3 flex-shrink-0">
             {/* Language Switcher */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-shrink-0">
               <button
                 type="button"
                 onClick={() => setLanguage('en')}
@@ -180,29 +180,31 @@ export function NavBarClient() {
               </button>
             </div>
 
-            {user ? (
-              <Link href={dashboardUrl}>
-                <Button className="bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white rounded-lg px-3 md:px-4 text-sm btn-hover-lift">
-                  {t.nav.dashboard}
-                </Button>
-              </Link>
-            ) : (
-              <>
-                <Link href="/login">
-                  <Button
-                    variant="outline"
-                    className="border-[1.5px] border-[var(--primary)] text-[var(--primary)] hover:bg-hero rounded-lg px-3 md:px-4 text-sm btn-hover-lift"
-                  >
-                    {t.nav.login}
-                  </Button>
-                </Link>
-                <Link href="/register">
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {user ? (
+                <Link href={dashboardUrl}>
                   <Button className="bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white rounded-lg px-3 md:px-4 text-sm btn-hover-lift">
-                    {t.nav.getStarted}
+                    {t.nav.dashboard}
                   </Button>
                 </Link>
-              </>
-            )}
+              ) : (
+                <>
+                  <Link href="/login">
+                    <Button
+                      variant="outline"
+                      className="border-[1.5px] border-[var(--primary)] text-[var(--primary)] hover:bg-hero rounded-lg px-3 md:px-4 text-sm btn-hover-lift"
+                    >
+                      {t.nav.login}
+                    </Button>
+                  </Link>
+                  <Link href="/register">
+                    <Button className="bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white rounded-lg px-3 md:px-4 text-sm btn-hover-lift">
+                      {t.nav.getStarted}
+                    </Button>
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
