@@ -4,14 +4,14 @@ import { useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent } from '@/components/ui/card'
-import { Eye, EyeOff, Loader2, GraduationCap, Users, Mail, ArrowRight, Camera, X } from 'lucide-react'
+import { Eye, EyeOff, Loader2, GraduationCap, Users, ArrowRight, Camera, X } from 'lucide-react'
 import { Role } from '@/lib/types'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { translations } from '@/lib/i18n/translations'
@@ -36,6 +36,7 @@ interface FormData {
 }
 
 export default function RegisterPage() {
+  const router = useRouter()
   const { language } = useLanguage()
   const t = translations[language]
 
@@ -57,7 +58,6 @@ export default function RegisterPage() {
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormData, string>>>({})
   const [isLoading, setIsLoading] = useState(false)
-  const [emailSent, setEmailSent] = useState(false)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -183,44 +183,22 @@ export default function RegisterPage() {
       photo_url: null as string | null,
     }
 
-    localStorage.setItem('dana_pending_profile', JSON.stringify(profileData))
-
     if (photoFile) {
       uploadPhotoInBackground(supabase, authData.user.id, photoFile).catch((err) => {
         console.error('Background photo upload failed:', err)
       })
     }
 
-    setIsLoading(false)
-    setEmailSent(true)
-  }
+    localStorage.setItem('dana_pending_profile', JSON.stringify(profileData))
 
-  if (emailSent) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#EEEEF8] via-[#EEEEF8] to-[#E8E8F5] relative flex items-center justify-center py-12 px-4">
-        <HeroBackground />
-        <Card className="w-full max-w-md bg-white border-0 rounded-3xl shadow-[0_20px_60px_rgba(27,42,114,0.15)] relative z-10">
-          <CardContent className="pt-8 px-8 pb-8 text-center">
-            <div className="w-16 h-16 bg-[var(--bg-hero)] rounded-full flex items-center justify-center mx-auto mb-4">
-              <Mail className="w-8 h-8 text-[var(--primary)]" />
-            </div>
-            <h1 className="font-heading text-2xl font-bold text-[var(--primary)] mb-2">
-              {t.pages.register.checkEmailTitle}
-            </h1>
-            <p className="text-[var(--text-secondary)] mb-6">
-              {t.pages.register.checkEmailBodyPrefix} <strong>{formData.email}</strong>.{' '}
-              {t.pages.register.checkEmailBodySuffix}
-            </p>
-            <p className="text-sm text-[var(--text-muted)] mb-6">{t.pages.register.checkEmailSpamNote}</p>
-            <Link href="/login">
-              <Button className="w-full bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white rounded-lg btn-hover-lift">
-                {t.pages.register.backToLogin}
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-    )
+    // No email confirmation needed - redirect directly
+    if (formData.role === 'mentor') {
+      router.push('/dashboard/mentor')
+    } else {
+      router.push('/dashboard/mentee')
+    }
+    setIsLoading(false)
+    return
   }
 
   return (
