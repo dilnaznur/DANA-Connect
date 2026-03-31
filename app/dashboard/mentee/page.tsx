@@ -358,7 +358,7 @@ export default function MenteeDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="font-heading text-3xl font-bold text-[var(--primary)]">
+          <h1 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--primary)]">
             {t.dashboard.mentee}
           </h1>
           <p className="text-[var(--text-secondary)] mt-2">
@@ -367,14 +367,14 @@ export default function MenteeDashboard() {
         </div>
 
         {/* Two-column layout: Sidebar + Content */}
-        <div className="flex gap-8">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Left Sidebar */}
-          <div className="w-56 flex-shrink-0">
-            <div className="bg-white border-r border-[var(--border)] min-h-[400px] rounded-xl pt-6 px-3">
-              <nav className="space-y-1">
+          <div className="w-full lg:w-56 flex-shrink-0">
+            <div className="bg-white border border-[var(--border)] lg:min-h-[400px] rounded-xl pt-3 sm:pt-6 px-2 sm:px-3">
+              <nav className="flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-1 lg:overflow-visible lg:pb-0">
                 <button
                   onClick={() => setActiveTab('browse')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                  className={`flex-shrink-0 whitespace-nowrap lg:w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
                     activeTab === 'browse'
                       ? 'bg-[#EEEDF8] text-[#1B2A72] font-semibold'
                       : 'text-[var(--text-secondary)] hover:bg-[#F5F5FB]'
@@ -385,7 +385,7 @@ export default function MenteeDashboard() {
                 </button>
                 <button
                   onClick={() => setActiveTab('applications')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                  className={`flex-shrink-0 whitespace-nowrap lg:w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
                     activeTab === 'applications'
                       ? 'bg-[#EEEDF8] text-[#1B2A72] font-semibold'
                       : 'text-[var(--text-secondary)] hover:bg-[#F5F5FB]'
@@ -401,7 +401,7 @@ export default function MenteeDashboard() {
                 </button>
                 <button
                   onClick={() => setActiveTab('projects')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                  className={`flex-shrink-0 whitespace-nowrap lg:w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
                     activeTab === 'projects'
                       ? 'bg-[#EEEDF8] text-[#1B2A72] font-semibold'
                       : 'text-[var(--text-secondary)] hover:bg-[#F5F5FB]'
@@ -428,10 +428,10 @@ export default function MenteeDashboard() {
                   <>
                     {/* Tag Filter */}
                     {allTags.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-6">
+                      <div className="flex gap-2 overflow-x-auto pb-2 mb-6 sm:flex-wrap sm:overflow-visible sm:pb-0">
                         <button
                           onClick={() => setSelectedTag(null)}
-                          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                          className={`flex-shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                             selectedTag === null
                               ? 'bg-[var(--primary)] text-white'
                               : 'bg-hero text-[var(--primary)] hover:bg-[var(--border)]'
@@ -443,7 +443,7 @@ export default function MenteeDashboard() {
                           <button
                             key={tag}
                             onClick={() => setSelectedTag(tag)}
-                            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                            className={`flex-shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                               selectedTag === tag
                                 ? 'bg-[var(--primary)] text-white'
                                 : 'bg-hero text-[var(--primary)] hover:bg-[var(--border)]'
@@ -579,10 +579,12 @@ export default function MenteeDashboard() {
                                     {opp.mentor.email && (
                                       <a
                                         href={`mailto:${opp.mentor.email}`}
-                                        className="inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:underline"
+                                        className="inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:underline min-w-0"
                                       >
                                         <Mail className="w-4 h-4" />
-                                        {t.dashboard.status.email}: {opp.mentor.email}
+                                        <span className="min-w-0 break-all sm:break-normal">
+                                          {t.dashboard.status.email}: {opp.mentor.email}
+                                        </span>
                                       </a>
                                     )}
                                     {opp.mentor.linkedin_url && (
@@ -590,10 +592,12 @@ export default function MenteeDashboard() {
                                         href={opp.mentor.linkedin_url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:underline"
+                                        className="inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:underline min-w-0"
                                       >
                                         <Linkedin className="w-4 h-4" />
-                                        {t.dashboard.status.linkedin}: {opp.mentor.linkedin_url}
+                                        <span className="min-w-0 break-all sm:break-normal">
+                                          {t.dashboard.status.linkedin}: {opp.mentor.linkedin_url}
+                                        </span>
                                         <ExternalLink className="w-3 h-3" />
                                       </a>
                                     )}
@@ -714,10 +718,12 @@ export default function MenteeDashboard() {
                                     {project.contact_email && (
                                       <a
                                         href={`mailto:${project.contact_email}`}
-                                        className="inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:underline"
+                                        className="inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:underline min-w-0"
                                       >
                                         <Mail className="w-4 h-4" />
-                                        {project.contact_email}
+                                        <span className="min-w-0 break-all sm:break-normal">
+                                          {project.contact_email}
+                                        </span>
                                       </a>
                                     )}
                                     {project.contact_telegram && (
@@ -725,10 +731,12 @@ export default function MenteeDashboard() {
                                         href={formatTelegramLink(project.contact_telegram)}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:underline"
+                                        className="inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:underline min-w-0"
                                       >
                                         <Send className="w-4 h-4" />
-                                        {t.dashboard.status.telegram}: {project.contact_telegram}
+                                        <span className="min-w-0 break-all sm:break-normal">
+                                          {t.dashboard.status.telegram}: {project.contact_telegram}
+                                        </span>
                                         <ExternalLink className="w-3 h-3" />
                                       </a>
                                     )}

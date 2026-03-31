@@ -23,7 +23,7 @@ export function MentorCard({ full_name, institution, specialization, title, phot
   const fieldTag = specialization?.split(',')[0].trim()
 
   return (
-    <div className="bg-white border border-[#E2E4F0] rounded-xl p-5 transition-all duration-200 ease-out hover:-translate-y-[1px] hover:shadow-lg">
+    <div className="bg-white border border-[#E2E4F0] rounded-xl p-4 sm:p-5 transition-all duration-200 ease-out hover:-translate-y-[1px] hover:shadow-lg">
       <div className="flex items-start gap-4">
         {/* Avatar - 64px circle */}
         <div className="flex-shrink-0">

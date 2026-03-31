@@ -212,10 +212,10 @@ export default function EditProfilePage() {
       <section className="relative py-12 lg:py-16 overflow-hidden">
         <HeroBackground />
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-          <h1 className="font-heading text-[32px] lg:text-[42px] font-extrabold text-[#1B2A72] leading-tight">
+          <h1 className="font-heading text-2xl sm:text-[32px] lg:text-[42px] font-extrabold text-[#1B2A72] leading-tight">
             Edit Your Profile
           </h1>
-          <p className="text-lg text-[var(--text-secondary)] mt-2">
+          <p className="text-base sm:text-lg text-[var(--text-secondary)] mt-2">
             Update your information and personalize your profile
           </p>
         </div>
@@ -225,13 +225,13 @@ export default function EditProfilePage() {
       <section className="pb-16 lg:pb-24">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
           <Card className="bg-white border-0 rounded-3xl shadow-[0_20px_60px_rgba(27,42,114,0.1)]">
-            <CardContent className="p-8">
+            <CardContent className="p-6 sm:p-8">
               <div className="space-y-6">
                 {/* Photo Upload */}
-                <div className="flex items-center gap-6">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
                   <div className="relative">
                     {displayPhoto ? (
-                      <div className="relative w-24 h-24">
+                      <div className="relative w-20 h-20 sm:w-24 sm:h-24">
                         <Image
                           src={displayPhoto}
                           alt="Profile photo"
@@ -252,9 +252,9 @@ export default function EditProfilePage() {
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-24 h-24 rounded-full bg-[#E8E9F8] flex items-center justify-center text-[#1B2A72] hover:bg-[#DDDDF0] transition-colors"
+                        className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[#E8E9F8] flex items-center justify-center text-[#1B2A72] hover:bg-[#DDDDF0] transition-colors"
                       >
-                        <Camera className="w-8 h-8" />
+                        <Camera className="w-7 h-7 sm:w-8 sm:h-8" />
                       </button>
                     )}
                     <input
@@ -265,7 +265,7 @@ export default function EditProfilePage() {
                       className="hidden"
                     />
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <Label className="text-sm font-medium text-[#1B2A72]">Profile Photo</Label>
                     <p className="text-sm text-[var(--text-muted)] mt-1">
                       Upload a photo to personalize your profile. Max 5MB.

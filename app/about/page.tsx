@@ -20,14 +20,14 @@ export default function AboutPage() {
       <NavBar />
 
       {/* Hero Section */}
-      <section className="relative py-16 lg:py-24 overflow-hidden">
+      <section className="relative py-12 sm:py-16 lg:py-24 overflow-hidden">
         <HeroBackground />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           <span className="section-label">{t.pages.about.heroLabel}</span>
-          <h1 className="font-heading text-[42px] lg:text-[52px] font-extrabold text-[#1B2A72] leading-tight">
+          <h1 className="font-heading text-3xl sm:text-[42px] lg:text-[52px] font-extrabold text-[#1B2A72] leading-tight">
             {t.pages.about.heroTitle}
           </h1>
-          <p className="text-xl text-[var(--text-secondary)] mt-6 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-[var(--text-secondary)] mt-4 sm:mt-6 max-w-2xl mx-auto">
             {t.pages.about.heroSubtitle}
           </p>
         </div>
@@ -37,7 +37,7 @@ export default function AboutPage() {
       <section className="py-16 lg:py-20 bg-white flex-1">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="prose prose-lg max-w-none">
-            <div className="bg-[#EEEDF8] rounded-2xl p-8 mb-12">
+            <div className="bg-[#EEEDF8] rounded-2xl p-6 sm:p-8 mb-10 sm:mb-12">
               <h2 className="font-heading text-2xl font-bold text-[#1B2A72] mb-4">
                 {t.pages.about.visionTitle}
               </h2>
@@ -46,8 +46,8 @@ export default function AboutPage() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8 mb-12">
-              <div className="bg-white border border-[var(--border)] rounded-2xl p-6 shadow-card">
+            <div className="grid md:grid-cols-2 gap-6 sm:gap-8 mb-10 sm:mb-12">
+              <div className="bg-white border border-[var(--border)] rounded-2xl p-5 sm:p-6 shadow-card">
                 <div className="w-12 h-12 bg-[#EEEDF8] rounded-xl flex items-center justify-center mb-4">
                   <span className="text-2xl">🎯</span>
                 </div>
@@ -59,7 +59,7 @@ export default function AboutPage() {
                 </p>
               </div>
 
-              <div className="bg-white border border-[var(--border)] rounded-2xl p-6 shadow-card">
+              <div className="bg-white border border-[var(--border)] rounded-2xl p-5 sm:p-6 shadow-card">
                 <div className="w-12 h-12 bg-[#EEEDF8] rounded-xl flex items-center justify-center mb-4">
                   <span className="text-2xl">🔬</span>
                 </div>
@@ -71,7 +71,7 @@ export default function AboutPage() {
                 </p>
               </div>
 
-              <div className="bg-white border border-[var(--border)] rounded-2xl p-6 shadow-card">
+              <div className="bg-white border border-[var(--border)] rounded-2xl p-5 sm:p-6 shadow-card">
                 <div className="w-12 h-12 bg-[#EEEDF8] rounded-xl flex items-center justify-center mb-4">
                   <span className="text-2xl">🤝</span>
                 </div>
@@ -83,7 +83,7 @@ export default function AboutPage() {
                 </p>
               </div>
 
-              <div className="bg-white border border-[var(--border)] rounded-2xl p-6 shadow-card">
+              <div className="bg-white border border-[var(--border)] rounded-2xl p-5 sm:p-6 shadow-card">
                 <div className="w-12 h-12 bg-[#EEEDF8] rounded-xl flex items-center justify-center mb-4">
                   <span className="text-2xl">🌟</span>
                 </div>
@@ -96,7 +96,7 @@ export default function AboutPage() {
               </div>
             </div>
 
-            <div className="text-center bg-gradient-to-r from-[#1B2A72] to-[#4F63D2] rounded-2xl p-8 text-white">
+            <div className="text-center bg-gradient-to-r from-[#1B2A72] to-[#4F63D2] rounded-2xl p-6 sm:p-8 text-white">
               <h2 className="font-heading text-2xl font-bold mb-4">
                 {t.pages.about.cta.title}
               </h2>

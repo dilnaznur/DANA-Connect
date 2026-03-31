@@ -548,7 +548,7 @@ export default function MentorDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="font-heading text-3xl font-bold text-[var(--primary)]">
+          <h1 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--primary)]">
             {t.dashboard.mentor}
           </h1>
           <p className="text-[var(--text-secondary)] mt-2">
@@ -557,14 +557,14 @@ export default function MentorDashboard() {
         </div>
 
         {/* Two-column layout: Sidebar + Content */}
-        <div className="flex gap-8">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Left Sidebar */}
-          <div className="w-56 flex-shrink-0">
-            <div className="bg-white border-r border-[var(--border)] min-h-[400px] rounded-xl pt-6 px-3">
-              <nav className="space-y-1">
+          <div className="w-full lg:w-56 flex-shrink-0">
+            <div className="bg-white border border-[var(--border)] lg:min-h-[400px] rounded-xl pt-3 sm:pt-6 px-2 sm:px-3">
+              <nav className="flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-1 lg:overflow-visible lg:pb-0">
                 <button
                   onClick={() => setActiveTab('browse-apply')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                  className={`flex-shrink-0 whitespace-nowrap lg:w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
                     activeTab === 'browse-apply'
                       ? 'bg-[#EEEDF8] text-[#1B2A72] font-semibold'
                       : 'text-[var(--text-secondary)] hover:bg-[#F5F5FB]'
@@ -575,7 +575,7 @@ export default function MentorDashboard() {
                 </button>
                 <button
                   onClick={() => setActiveTab('opportunities')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                  className={`flex-shrink-0 whitespace-nowrap lg:w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
                     activeTab === 'opportunities'
                       ? 'bg-[#EEEDF8] text-[#1B2A72] font-semibold'
                       : 'text-[var(--text-secondary)] hover:bg-[#F5F5FB]'
@@ -586,7 +586,7 @@ export default function MentorDashboard() {
                 </button>
                 <button
                   onClick={() => setActiveTab('applications')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                  className={`flex-shrink-0 whitespace-nowrap lg:w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
                     activeTab === 'applications'
                       ? 'bg-[#EEEDF8] text-[#1B2A72] font-semibold'
                       : 'text-[var(--text-secondary)] hover:bg-[#F5F5FB]'
@@ -602,7 +602,7 @@ export default function MentorDashboard() {
                 </button>
                 <Link
                   href="/projects"
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors text-[var(--text-secondary)] hover:bg-[#F5F5FB]"
+                  className="flex-shrink-0 whitespace-nowrap lg:w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors text-[var(--text-secondary)] hover:bg-[#F5F5FB]"
                 >
                   <FolderOpen className="w-5 h-5" />
                   {t.dashboard.sidebar.myProjects}
@@ -728,10 +728,12 @@ export default function MentorDashboard() {
                                       {opp.mentor.email && (
                                         <a
                                           href={`mailto:${opp.mentor.email}`}
-                                          className="inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:underline"
+                                          className="inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:underline min-w-0"
                                         >
                                           <Mail className="w-4 h-4" />
-                                          {t.dashboard.status.email}: {opp.mentor.email}
+                                          <span className="min-w-0 break-all sm:break-normal">
+                                            {t.dashboard.status.email}: {opp.mentor.email}
+                                          </span>
                                         </a>
                                       )}
                                       {opp.mentor.linkedin_url && (
@@ -739,10 +741,12 @@ export default function MentorDashboard() {
                                           href={opp.mentor.linkedin_url}
                                           target="_blank"
                                           rel="noopener noreferrer"
-                                          className="inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:underline"
+                                          className="inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:underline min-w-0"
                                         >
                                           <Linkedin className="w-4 h-4" />
-                                          {t.dashboard.status.linkedin}: {opp.mentor.linkedin_url}
+                                          <span className="min-w-0 break-all sm:break-normal">
+                                            {t.dashboard.status.linkedin}: {opp.mentor.linkedin_url}
+                                          </span>
                                           <ExternalLink className="w-3 h-3" />
                                         </a>
                                       )}
@@ -840,7 +844,7 @@ export default function MentorDashboard() {
                             placeholder="Add tags (e.g., AI, Bioinformatics)"
                           />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor="spots">Total Spots</Label>
                             <Input

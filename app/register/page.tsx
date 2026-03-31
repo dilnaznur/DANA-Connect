@@ -243,7 +243,7 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      <div className="bg-white flex flex-col items-center justify-center py-12 px-4 lg:py-20 lg:px-12 overflow-y-auto">
+      <div className="bg-white flex flex-col items-center justify-start lg:justify-center py-8 sm:py-12 px-4 lg:py-20 lg:px-12 overflow-y-auto">
         <div className="w-full max-w-md">
           <div className="lg:hidden mb-8 text-center">
             <Link href="/" className="inline-block mb-6">

@@ -92,11 +92,11 @@ export default function LoginPage() {
       <div className="min-h-screen flex items-center justify-center px-4 relative z-10">
         <Card className="w-full max-w-[420px] bg-white border border-[#E2E4F0] rounded-2xl shadow-lg">
           <CardHeader className="text-center pb-2">
-            <Link href="/" className="inline-flex items-center justify-center gap-2 mb-8">
+            <Link href="/" className="inline-flex items-center justify-center gap-2 mb-6 sm:mb-8">
               <LogoIcon className="w-8 h-8 text-[#1B2A72]" />
               <span className="font-heading font-extrabold text-3xl text-[#1B2A72]">DANA Connect</span>
             </Link>
-            <h1 className="font-heading text-3xl font-extrabold text-[#1B2A72] mb-2">{t.pages.login.title}</h1>
+            <h1 className="font-heading text-2xl sm:text-3xl font-extrabold text-[#1B2A72] mb-2">{t.pages.login.title}</h1>
             <p className="text-[var(--text-secondary)] text-base">{t.pages.login.subtitle}</p>
           </CardHeader>
 

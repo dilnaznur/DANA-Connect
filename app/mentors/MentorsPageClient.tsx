@@ -31,21 +31,21 @@ export default function MentorsPageClient({ mentors }: MentorsPageClientProps) {
       <NavBar />
 
       {/* Hero Section */}
-      <section className="relative py-16 lg:py-20 overflow-hidden">
+      <section className="relative py-12 sm:py-16 lg:py-20 overflow-hidden">
         <HeroBackground />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           <span className="section-label">{t.pages.mentors.heroLabel}</span>
-          <h1 className="font-heading text-[42px] lg:text-[52px] font-extrabold text-[#1B2A72] leading-tight">
+          <h1 className="font-heading text-3xl sm:text-[42px] lg:text-[52px] font-extrabold text-[#1B2A72] leading-tight">
             {t.pages.mentors.heroTitle}
           </h1>
-          <p className="text-xl text-[var(--text-secondary)] mt-4 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-[var(--text-secondary)] mt-4 max-w-2xl mx-auto">
             {t.pages.mentors.heroSubtitle}
           </p>
         </div>
       </section>
 
       {/* Mentors Grid */}
-      <section className="py-16 lg:py-24 bg-[#EEEDF8] flex-1">
+      <section className="py-12 sm:py-16 lg:py-24 bg-[#EEEDF8] flex-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {mentors.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

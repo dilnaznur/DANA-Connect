@@ -58,18 +58,18 @@ export function HomeContent({
       )}
 
       {/* Hero Section */}
-      <section className="relative py-24 lg:py-40 overflow-hidden">
+      <section className="relative py-16 sm:py-24 lg:py-40 overflow-hidden">
         <HeroBackground />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <span className="section-label">{t.hero.label}</span>
-            <h1 className="font-heading text-[52px] lg:text-[64px] font-extrabold text-[#1B2A72] leading-[1.1] mb-6">
+            <h1 className="font-heading text-4xl sm:text-[52px] lg:text-[64px] font-extrabold text-[#1B2A72] leading-[1.1] mb-5 sm:mb-6">
               {t.hero.title}
             </h1>
-            <p className="text-xl text-[var(--text-secondary)] leading-relaxed mb-8 max-w-2xl mx-auto">
+            <p className="text-lg sm:text-xl text-[var(--text-secondary)] leading-relaxed mb-7 sm:mb-8 max-w-2xl mx-auto">
               {t.hero.subtitle}
             </p>
-            <div className="flex flex-wrap justify-center gap-4 mb-16">
+            <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4 mb-10 sm:mb-16">
               <Link href="/mentors">
                 <Button className="bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white rounded-lg px-8 py-3 text-base h-auto btn-hover-lift">
                   {t.hero.findMentor} →
@@ -114,11 +114,11 @@ export function HomeContent({
       <div className="section-divider" />
 
       {/* Mentors Section - lavender background */}
-      <section className="py-24 lg:py-30 bg-[#EEEDF8]">
+      <section className="py-16 sm:py-24 lg:py-30 bg-[#EEEDF8]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <span className="section-label">{t.mentors.label}</span>
-            <h2 className="font-heading text-[36px] lg:text-[42px] font-extrabold text-[#1B2A72]">
+            <h2 className="font-heading text-3xl sm:text-[36px] lg:text-[42px] font-extrabold text-[#1B2A72]">
               {t.mentors.title}
             </h2>
           </div>
@@ -162,11 +162,11 @@ export function HomeContent({
       </section>
 
       {/* Research Opportunities Section */}
-      <section className="py-24 lg:py-30 bg-white">
+      <section className="py-16 sm:py-24 lg:py-30 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <span className="section-label">{t.research.label}</span>
-            <h2 className="font-heading text-[36px] lg:text-[42px] font-extrabold text-[#1B2A72]">
+            <h2 className="font-heading text-3xl sm:text-[36px] lg:text-[42px] font-extrabold text-[#1B2A72]">
               {t.research.title}
             </h2>
           </div>
@@ -214,21 +214,21 @@ export function HomeContent({
       </section>
 
       {/* Why It Matters Section - centered */}
-      <section className="py-24 lg:py-30 bg-[#EEEDF8]">
+      <section className="py-16 sm:py-24 lg:py-30 bg-[#EEEDF8]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <span className="section-label">{t.mission.label}</span>
-            <h2 className="font-heading text-[36px] lg:text-[42px] font-extrabold text-[#1B2A72] mb-6">
+            <h2 className="font-heading text-3xl sm:text-[36px] lg:text-[42px] font-extrabold text-[#1B2A72] mb-5 sm:mb-6">
               {t.mission.title}
             </h2>
-            <p className="text-xl text-[var(--text-secondary)] leading-relaxed max-w-3xl mx-auto">
+            <p className="text-lg sm:text-xl text-[var(--text-secondary)] leading-relaxed max-w-3xl mx-auto">
               {t.mission.description}
             </p>
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Stat Card 1 */}
-            <div className="bg-white border border-[var(--border)] rounded-2xl p-6 text-center">
+            <div className="bg-white border border-[var(--border)] rounded-2xl p-4 sm:p-6 text-center">
               <div className="w-12 h-12 bg-[#EEEDF8] rounded-xl flex items-center justify-center mx-auto mb-4">
                 <Users className="w-6 h-6 text-[#1B2A72]" />
               </div>
@@ -237,7 +237,7 @@ export function HomeContent({
             </div>
 
             {/* Stat Card 2 */}
-            <div className="bg-white border border-[var(--border)] rounded-2xl p-6 text-center">
+            <div className="bg-white border border-[var(--border)] rounded-2xl p-4 sm:p-6 text-center">
               <div className="w-12 h-12 bg-[#EEEDF8] rounded-xl flex items-center justify-center mx-auto mb-4">
                 <TrendingUp className="w-6 h-6 text-[#1B2A72]" />
               </div>
@@ -246,7 +246,7 @@ export function HomeContent({
             </div>
 
             {/* Stat Card 3 */}
-            <div className="bg-white border border-[var(--border)] rounded-2xl p-6 text-center">
+            <div className="bg-white border border-[var(--border)] rounded-2xl p-4 sm:p-6 text-center">
               <div className="w-12 h-12 bg-[#EEEDF8] rounded-xl flex items-center justify-center mx-auto mb-4">
                 <Building2 className="w-6 h-6 text-[#1B2A72]" />
               </div>
@@ -255,7 +255,7 @@ export function HomeContent({
             </div>
 
             {/* Stat Card 4 */}
-            <div className="bg-white border border-[var(--border)] rounded-2xl p-6 text-center">
+            <div className="bg-white border border-[var(--border)] rounded-2xl p-4 sm:p-6 text-center">
               <div className="w-12 h-12 bg-[#EEEDF8] rounded-xl flex items-center justify-center mx-auto mb-4">
                 <FlaskConical className="w-6 h-6 text-[#1B2A72]" />
               </div>

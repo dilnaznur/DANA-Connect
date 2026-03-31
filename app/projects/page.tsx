@@ -337,14 +337,14 @@ export default function ProjectsPage() {
       <NavBar />
 
       {/* Hero Section */}
-      <section className="relative py-16 lg:py-20 overflow-hidden">
+      <section className="relative py-12 sm:py-16 lg:py-20 overflow-hidden">
         <HeroBackground />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           <span className="section-label">{t.projects.heroLabel}</span>
-          <h1 className="font-heading text-[42px] lg:text-[52px] font-extrabold text-[#1B2A72] leading-tight">
+          <h1 className="font-heading text-3xl sm:text-[42px] lg:text-[52px] font-extrabold text-[#1B2A72] leading-tight">
             {t.projects.heroTitle}
           </h1>
-          <p className="text-xl text-[var(--text-secondary)] mt-4 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-[var(--text-secondary)] mt-4 max-w-2xl mx-auto">
             {t.projects.heroSubtitle}
           </p>
         </div>
@@ -356,7 +356,7 @@ export default function ProjectsPage() {
           {/* Header with Tabs and Post Button */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             {/* Tabs */}
-            <div className="flex gap-2">
+            <div className="flex gap-2 overflow-x-auto whitespace-nowrap [-webkit-overflow-scrolling:touch]">
               <button
                 onClick={() => setActiveTab('browse')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
@@ -553,7 +553,7 @@ export default function ProjectsPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="contact_email">{t.projects.dialog.contactEmailLabel}</Label>
                 <Input
@@ -577,7 +577,7 @@ export default function ProjectsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="deadline">{t.projects.dialog.deadlineLabel}</Label>
                 <Input

@@ -205,6 +205,44 @@ export function NavBarClient() {
             )}
           </div>
         </div>
+
+        {/* Mobile nav links */}
+        <div className="md:hidden pb-3">
+          <div className="flex items-center gap-4 overflow-x-auto whitespace-nowrap [-webkit-overflow-scrolling:touch]">
+            <Link
+              href="/mentors"
+              className="text-[var(--text-secondary)] hover:text-[var(--primary)] transition-colors font-medium text-sm"
+            >
+              {t.nav.mentors}
+            </Link>
+            <Link
+              href="/research"
+              className="text-[var(--text-secondary)] hover:text-[var(--primary)] transition-colors font-medium text-sm"
+            >
+              {t.nav.research}
+            </Link>
+            <Link
+              href="/projects"
+              className="text-[var(--text-secondary)] hover:text-[var(--primary)] transition-colors font-medium text-sm"
+            >
+              {t.nav.projects}
+            </Link>
+            <Link
+              href="/about"
+              className="text-[var(--text-secondary)] hover:text-[var(--primary)] transition-colors font-medium text-sm"
+            >
+              {t.nav.about}
+            </Link>
+            {!user && (
+              <Link
+                href="/register"
+                className="text-[var(--text-secondary)] hover:text-[var(--primary)] transition-colors font-medium text-sm"
+              >
+                {t.nav.join}
+              </Link>
+            )}
+          </div>
+        </div>
       </div>
     </nav>
   )

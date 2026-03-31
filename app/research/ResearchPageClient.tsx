@@ -56,27 +56,27 @@ export default function ResearchPageClient({ opportunities }: ResearchPageClient
       <NavBar />
 
       {/* Hero Section */}
-      <section className="relative py-16 lg:py-20 overflow-hidden">
+      <section className="relative py-12 sm:py-16 lg:py-20 overflow-hidden">
         <HeroBackground />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           <span className="section-label">{t.pages.research.heroLabel}</span>
-          <h1 className="font-heading text-[42px] lg:text-[52px] font-extrabold text-[#1B2A72] leading-tight">
+          <h1 className="font-heading text-3xl sm:text-[42px] lg:text-[52px] font-extrabold text-[#1B2A72] leading-tight">
             {t.pages.research.heroTitle}
           </h1>
-          <p className="text-xl text-[var(--text-secondary)] mt-4 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-[var(--text-secondary)] mt-4 max-w-2xl mx-auto">
             {t.pages.research.heroSubtitle}
           </p>
         </div>
       </section>
 
       {/* Opportunities */}
-      <section className="py-16 lg:py-24 bg-white flex-1">
+      <section className="py-12 sm:py-16 lg:py-24 bg-white flex-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {opportunities.length > 0 ? (
             <>
               {/* Tag Filter */}
               {allTags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-8">
+                <div className="flex gap-2 mb-8 overflow-x-auto whitespace-nowrap [-webkit-overflow-scrolling:touch] sm:flex-wrap sm:whitespace-normal">
                   <button
                     onClick={() => setSelectedTag(null)}
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
