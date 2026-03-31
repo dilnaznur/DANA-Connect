@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { createClient } from '@/lib/supabase/client'
-import { SupabaseClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -13,8 +13,9 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { Eye, EyeOff, Loader2, GraduationCap, Users, Mail, ArrowRight, Camera, X } from 'lucide-react'
 import { Role } from '@/lib/types'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { translations } from '@/lib/i18n/translations'
 
-// Lazy load HeroBackground to avoid blocking initial render
 const HeroBackground = dynamic(
   () => import('@/components/HeroBackground').then((mod) => ({ default: mod.HeroBackground })),
   { ssr: false }
@@ -35,6 +36,9 @@ interface FormData {
 }
 
 export default function RegisterPage() {
+  const { language } = useLanguage()
+  const t = translations[language]
+
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
     lastName: '',
@@ -48,6 +52,7 @@ export default function RegisterPage() {
     motivation: '',
     linkedinUrl: '',
   })
+
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormData, string>>>({})
@@ -64,19 +69,20 @@ export default function RegisterPage() {
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setError('Photo must be less than 5MB')
-        return
-      }
-      if (!file.type.startsWith('image/')) {
-        setError('Please select an image file')
-        return
-      }
-      setPhotoFile(file)
-      setPhotoPreview(URL.createObjectURL(file))
-      setError('')
+    if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError(t.pages.register.validation.photoTooLarge)
+      return
     }
+    if (!file.type.startsWith('image/')) {
+      setError(t.pages.register.validation.photoInvalidType)
+      return
+    }
+
+    setPhotoFile(file)
+    setPhotoPreview(URL.createObjectURL(file))
+    setError('')
   }
 
   const removePhoto = () => {
@@ -90,23 +96,25 @@ export default function RegisterPage() {
   const validateForm = (): boolean => {
     const errors: Partial<Record<keyof FormData, string>> = {}
 
-    if (!formData.firstName.trim()) errors.firstName = 'First name is required'
-    if (!formData.lastName.trim()) errors.lastName = 'Last name is required'
-    if (!formData.email.trim()) errors.email = 'Email is required'
+    if (!formData.firstName.trim()) errors.firstName = t.pages.register.validation.firstNameRequired
+    if (!formData.lastName.trim()) errors.lastName = t.pages.register.validation.lastNameRequired
+
+    if (!formData.email.trim()) errors.email = t.pages.register.validation.emailRequired
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = 'Please enter a valid email address'
+      errors.email = t.pages.register.validation.emailInvalid
     }
-    if (!formData.password) errors.password = 'Password is required'
+
+    if (!formData.password) errors.password = t.pages.register.validation.passwordRequired
     else if (formData.password.length < 8) {
-      errors.password = 'Password must be at least 8 characters'
+      errors.password = t.pages.register.validation.passwordMinLength
     }
-    if (!formData.role) errors.role = 'Please select a role'
+
+    if (!formData.role) errors.role = t.pages.register.validation.roleRequired
 
     setFieldErrors(errors)
     return Object.keys(errors).length === 0
   }
 
-  // Upload photo in background - returns photo URL or null
   const uploadPhotoInBackground = async (
     supabase: SupabaseClient,
     userId: string,
@@ -126,11 +134,7 @@ export default function RegisterPage() {
 
     const { data } = supabase.storage.from('avatars').getPublicUrl(filePath)
 
-    // Update the profile with photo_url after upload completes
-    await supabase
-      .from('profiles')
-      .update({ photo_url: data.publicUrl })
-      .eq('id', userId)
+    await supabase.from('profiles').update({ photo_url: data.publicUrl }).eq('id', userId)
 
     return data.publicUrl
   }
@@ -143,10 +147,8 @@ export default function RegisterPage() {
 
     setIsLoading(true)
 
-    // Create supabase client once
     const supabase = createClient()
 
-    // 1. Create auth user (email confirmation required)
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,
@@ -162,12 +164,11 @@ export default function RegisterPage() {
     }
 
     if (!authData.user) {
-      setError('Failed to create account')
+      setError(t.pages.register.validation.failedToCreateAccount)
       setIsLoading(false)
       return
     }
 
-    // 2. Save profile data to localStorage IMMEDIATELY (don't wait for photo)
     const profileData = {
       id: authData.user.id,
       full_name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
@@ -179,24 +180,21 @@ export default function RegisterPage() {
       motivation: formData.motivation.trim() || null,
       linkedin_url: formData.linkedinUrl.trim() || null,
       institution: formData.institution.trim() || null,
-      photo_url: null, // Will be updated by background upload
+      photo_url: null as string | null,
     }
+
     localStorage.setItem('dana_pending_profile', JSON.stringify(profileData))
 
-    // 3. Start photo upload in background (fire and forget)
     if (photoFile) {
-      // Don't await - let it run in background
       uploadPhotoInBackground(supabase, authData.user.id, photoFile).catch((err) => {
         console.error('Background photo upload failed:', err)
       })
     }
 
-    // 4. Show check email message immediately
     setIsLoading(false)
     setEmailSent(true)
   }
 
-  // Show check email message after successful signup
   if (emailSent) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#EEEEF8] via-[#EEEEF8] to-[#E8E8F5] relative flex items-center justify-center py-12 px-4">
@@ -207,18 +205,16 @@ export default function RegisterPage() {
               <Mail className="w-8 h-8 text-[var(--primary)]" />
             </div>
             <h1 className="font-heading text-2xl font-bold text-[var(--primary)] mb-2">
-              Check Your Email
+              {t.pages.register.checkEmailTitle}
             </h1>
             <p className="text-[var(--text-secondary)] mb-6">
-              We&apos;ve sent a confirmation link to <strong>{formData.email}</strong>.
-              Please click the link to complete your registration.
+              {t.pages.register.checkEmailBodyPrefix} <strong>{formData.email}</strong>.{' '}
+              {t.pages.register.checkEmailBodySuffix}
             </p>
-            <p className="text-sm text-[var(--text-muted)] mb-6">
-              If you don&apos;t see the email, check your spam folder.
-            </p>
+            <p className="text-sm text-[var(--text-muted)] mb-6">{t.pages.register.checkEmailSpamNote}</p>
             <Link href="/login">
               <Button className="w-full bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white rounded-lg btn-hover-lift">
-                Back to Login
+                {t.pages.register.backToLogin}
               </Button>
             </Link>
           </CardContent>
@@ -229,72 +225,52 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
-      {/* Left Panel - Hero Background with Quote (lazy loaded) */}
       <div className="hidden lg:flex relative overflow-hidden bg-gradient-to-br from-[#1B2A72] to-[#4F63D2]">
         <HeroBackground />
         <div className="relative z-10 flex flex-col items-start justify-between p-12">
           <Link href="/" className="inline-block">
-            <span className="font-heading font-bold text-3xl text-white">
-              DANA Connect
-            </span>
+            <span className="font-heading font-bold text-3xl text-white">DANA Connect</span>
           </Link>
 
           <div className="max-w-sm">
             <blockquote className="space-y-4">
-              <p className="font-heading text-3xl font-bold text-white leading-tight">
-                Empowering the next generation of women scientists in Kazakhstan
-              </p>
-              <p className="text-white/80 text-lg">
-                Join a community dedicated to breaking barriers and building futures in STEM.
-              </p>
+              <p className="font-heading text-3xl font-bold text-white leading-tight">{t.pages.register.leftQuoteTitle}</p>
+              <p className="text-white/80 text-lg">{t.pages.register.leftQuoteBody}</p>
             </blockquote>
           </div>
         </div>
       </div>
 
-      {/* Right Panel - Registration Form */}
       <div className="bg-white flex flex-col items-center justify-center py-12 px-4 lg:py-20 lg:px-12 overflow-y-auto">
         <div className="w-full max-w-md">
-          {/* Mobile Header */}
           <div className="lg:hidden mb-8 text-center">
             <Link href="/" className="inline-block mb-6">
               <span className="font-heading font-bold text-3xl bg-gradient-to-r from-[#1B2A72] to-[#4F63D2] bg-clip-text text-transparent">
                 DANA Connect
               </span>
             </Link>
-            <h1 className="font-heading text-2xl font-bold text-[var(--primary)] mb-2">
-              Create Your Account
-            </h1>
-            <p className="text-[var(--text-secondary)]">
-              Join our community of mentors and mentees
-            </p>
+            <h1 className="font-heading text-2xl font-bold text-[var(--primary)] mb-2">{t.pages.register.title}</h1>
+            <p className="text-[var(--text-secondary)]">{t.pages.register.subtitle}</p>
           </div>
 
-          {/* Desktop Header */}
           <div className="hidden lg:block mb-12">
-            <h1 className="font-heading text-3xl font-bold text-[var(--primary)] mb-2">
-              Create Your Account
-            </h1>
-            <p className="text-[var(--text-secondary)]">
-              Join our community of mentors and mentees
-            </p>
+            <h1 className="font-heading text-3xl font-bold text-[var(--primary)] mb-2">{t.pages.register.title}</h1>
+            <p className="text-[var(--text-secondary)]">{t.pages.register.subtitle}</p>
           </div>
 
           <form onSubmit={handleRegister} className="space-y-6">
-            {/* Personal Details */}
             <div className="space-y-3">
               <h3 className="font-heading font-semibold text-[var(--primary)] text-sm uppercase tracking-wide">
-                Personal Details
+                {t.pages.register.sectionPersonal}
               </h3>
 
-              {/* Photo Upload */}
               <div className="flex items-center gap-4">
                 <div className="relative">
                   {photoPreview ? (
                     <div className="relative w-20 h-20">
                       <Image
                         src={photoPreview}
-                        alt="Profile preview"
+                        alt={t.pages.register.altProfilePreview}
                         fill
                         className="rounded-full object-cover"
                       />
@@ -324,72 +300,72 @@ export default function RegisterPage() {
                   />
                 </div>
                 <div className="flex-1">
-                  <Label className="text-xs font-medium">Profile Photo (Optional)</Label>
-                  <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                    Add a photo to personalize your profile. Max 5MB.
-                  </p>
+                  <Label className="text-xs font-medium">{t.pages.register.photoLabel}</Label>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">{t.pages.register.photoHelp}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label htmlFor="firstName" className="text-xs font-medium">First Name *</Label>
+                  <Label htmlFor="firstName" className="text-xs font-medium">
+                    {t.pages.register.firstNameLabel}
+                  </Label>
                   <Input
                     id="firstName"
                     value={formData.firstName}
                     onChange={(e) => updateField('firstName', e.target.value)}
-                    placeholder="Jane"
+                    placeholder={t.pages.register.firstNamePlaceholder}
                     className={`border-[1.5px] rounded-lg px-3 py-2 text-sm ${
                       fieldErrors.firstName ? 'border-red-500' : 'border-[var(--border)]'
                     }`}
                   />
-                  {fieldErrors.firstName && (
-                    <p className="text-red-500 text-xs">{fieldErrors.firstName}</p>
-                  )}
+                  {fieldErrors.firstName && <p className="text-red-500 text-xs">{fieldErrors.firstName}</p>}
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="lastName" className="text-xs font-medium">Last Name *</Label>
+                  <Label htmlFor="lastName" className="text-xs font-medium">
+                    {t.pages.register.lastNameLabel}
+                  </Label>
                   <Input
                     id="lastName"
                     value={formData.lastName}
                     onChange={(e) => updateField('lastName', e.target.value)}
-                    placeholder="Smith"
+                    placeholder={t.pages.register.lastNamePlaceholder}
                     className={`border-[1.5px] rounded-lg px-3 py-2 text-sm ${
                       fieldErrors.lastName ? 'border-red-500' : 'border-[var(--border)]'
                     }`}
                   />
-                  {fieldErrors.lastName && (
-                    <p className="text-red-500 text-xs">{fieldErrors.lastName}</p>
-                  )}
+                  {fieldErrors.lastName && <p className="text-red-500 text-xs">{fieldErrors.lastName}</p>}
                 </div>
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="email" className="text-xs font-medium">Email Address *</Label>
+                <Label htmlFor="email" className="text-xs font-medium">
+                  {t.pages.register.emailLabel}
+                </Label>
                 <Input
                   id="email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => updateField('email', e.target.value)}
-                  placeholder="you@example.com"
+                  placeholder={t.pages.register.emailPlaceholder}
                   className={`border-[1.5px] rounded-lg px-3 py-2 text-sm ${
                     fieldErrors.email ? 'border-red-500' : 'border-[var(--border)]'
                   }`}
                 />
-                {fieldErrors.email && (
-                  <p className="text-red-500 text-xs">{fieldErrors.email}</p>
-                )}
+                {fieldErrors.email && <p className="text-red-500 text-xs">{fieldErrors.email}</p>}
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="password" className="text-xs font-medium">Password * (Min 8 characters)</Label>
+                <Label htmlFor="password" className="text-xs font-medium">
+                  {t.pages.register.passwordLabel}
+                </Label>
                 <div className="relative">
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={(e) => updateField('password', e.target.value)}
-                    placeholder="••••••••"
+                    placeholder={t.pages.register.passwordPlaceholder}
                     className={`border-[1.5px] rounded-lg px-3 py-2 pr-10 text-sm ${
                       fieldErrors.password ? 'border-red-500' : 'border-[var(--border)]'
                     }`}
@@ -402,50 +378,53 @@ export default function RegisterPage() {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
-                {fieldErrors.password && (
-                  <p className="text-red-500 text-xs">{fieldErrors.password}</p>
-                )}
+                {fieldErrors.password && <p className="text-red-500 text-xs">{fieldErrors.password}</p>}
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="phone" className="text-xs font-medium">Phone (Optional)</Label>
+                <Label htmlFor="phone" className="text-xs font-medium">
+                  {t.pages.register.phoneLabel}
+                </Label>
                 <Input
                   id="phone"
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => updateField('phone', e.target.value)}
-                  placeholder="+7 XXX XXX XXXX"
+                  placeholder={t.pages.register.phonePlaceholder}
                   className="border-[1.5px] border-[var(--border)] rounded-lg px-3 py-2 text-sm"
                 />
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="title" className="text-xs font-medium">Title / Position</Label>
+                <Label htmlFor="title" className="text-xs font-medium">
+                  {t.pages.register.titlePositionLabel}
+                </Label>
                 <Input
                   id="title"
                   value={formData.title}
                   onChange={(e) => updateField('title', e.target.value)}
-                  placeholder="e.g., PhD Student, Research Fellow, Professor"
+                  placeholder={t.pages.register.titlePositionPlaceholder}
                   className="border-[1.5px] border-[var(--border)] rounded-lg px-3 py-2 text-sm"
                 />
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="institution" className="text-xs font-medium">Institution / University</Label>
+                <Label htmlFor="institution" className="text-xs font-medium">
+                  {t.pages.register.institutionLabel}
+                </Label>
                 <Input
                   id="institution"
                   value={formData.institution}
                   onChange={(e) => updateField('institution', e.target.value)}
-                  placeholder="Al-Farabi Kazakh National University"
+                  placeholder={t.pages.register.institutionPlaceholder}
                   className="border-[1.5px] border-[var(--border)] rounded-lg px-3 py-2 text-sm"
                 />
               </div>
             </div>
 
-            {/* Role Selector */}
             <div className="space-y-3 pt-2">
               <h3 className="font-heading font-semibold text-[var(--primary)] text-sm uppercase tracking-wide">
-                I want to join as... *
+                {t.pages.register.sectionRole}
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -466,13 +445,10 @@ export default function RegisterPage() {
                     </div>
                   )}
                   <Users className="w-6 h-6 text-[var(--primary)] mb-2" />
-                  <h4 className="font-heading font-semibold text-[var(--primary)] text-sm">
-                    Mentor
-                  </h4>
-                  <p className="text-xs text-[var(--text-secondary)] mt-1">
-                    Share expertise
-                  </p>
+                  <h4 className="font-heading font-semibold text-[var(--primary)] text-sm">{t.pages.register.roleMentor}</h4>
+                  <p className="text-xs text-[var(--text-secondary)] mt-1">{t.pages.register.roleMentorDesc}</p>
                 </button>
+
                 <button
                   type="button"
                   onClick={() => updateField('role', 'mentee')}
@@ -490,57 +466,57 @@ export default function RegisterPage() {
                     </div>
                   )}
                   <GraduationCap className="w-6 h-6 text-[var(--primary)] mb-2" />
-                  <h4 className="font-heading font-semibold text-[var(--primary)] text-sm">
-                    Mentee
-                  </h4>
-                  <p className="text-xs text-[var(--text-secondary)] mt-1">
-                    Learn & grow
-                  </p>
+                  <h4 className="font-heading font-semibold text-[var(--primary)] text-sm">{t.pages.register.roleMentee}</h4>
+                  <p className="text-xs text-[var(--text-secondary)] mt-1">{t.pages.register.roleMenteeDesc}</p>
                 </button>
               </div>
-              {fieldErrors.role && (
-                <p className="text-red-500 text-xs">{fieldErrors.role}</p>
-              )}
+
+              {fieldErrors.role && <p className="text-red-500 text-xs">{fieldErrors.role}</p>}
             </div>
 
-            {/* Profile Details */}
             <div className="space-y-3 pt-2">
               <h3 className="font-heading font-semibold text-[var(--primary)] text-sm uppercase tracking-wide">
-                Profile Details (Optional)
+                {t.pages.register.sectionProfile}
               </h3>
 
               <div className="space-y-1">
-                <Label htmlFor="specialization" className="text-xs font-medium">Your Specialization (for tag)</Label>
+                <Label htmlFor="specialization" className="text-xs font-medium">
+                  {t.pages.register.specializationLabel}
+                </Label>
                 <Input
                   id="specialization"
                   value={formData.specialization}
                   onChange={(e) => updateField('specialization', e.target.value)}
-                  placeholder="e.g., Machine Learning, Biomedical Engineering"
+                  placeholder={t.pages.register.specializationPlaceholder}
                   className="border-[1.5px] border-[var(--border)] rounded-lg px-3 py-2 text-sm"
                 />
-                <p className="text-xs text-[var(--text-muted)]">This will appear as a tag on your profile card</p>
+                <p className="text-xs text-[var(--text-muted)]">{t.pages.register.specializationHelp}</p>
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="motivation" className="text-xs font-medium">Bio / Why join DANA Connect?</Label>
+                <Label htmlFor="motivation" className="text-xs font-medium">
+                  {t.pages.register.bioLabel}
+                </Label>
                 <Textarea
                   id="motivation"
                   value={formData.motivation}
                   onChange={(e) => updateField('motivation', e.target.value)}
-                  placeholder="Tell us about yourself and what you hope to achieve..."
+                  placeholder={t.pages.register.bioPlaceholder}
                   rows={3}
                   className="border-[1.5px] border-[var(--border)] rounded-lg px-3 py-2 text-sm"
                 />
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="linkedin" className="text-xs font-medium">LinkedIn Profile</Label>
+                <Label htmlFor="linkedin" className="text-xs font-medium">
+                  {t.pages.register.linkedinLabel}
+                </Label>
                 <Input
                   id="linkedin"
                   type="url"
                   value={formData.linkedinUrl}
                   onChange={(e) => updateField('linkedinUrl', e.target.value)}
-                  placeholder="https://linkedin.com/in/yourprofile"
+                  placeholder={t.pages.register.linkedinPlaceholder}
                   className="border-[1.5px] border-[var(--border)] rounded-lg px-3 py-2 text-sm"
                 />
               </div>
@@ -560,23 +536,23 @@ export default function RegisterPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Creating account...
+                  {t.pages.register.creatingAccount}
                 </>
               ) : (
                 <>
-                  Create Account
+                  {t.pages.register.createAccount}
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </>
               )}
             </Button>
 
             <p className="text-center text-[var(--text-secondary)] text-sm">
-              Already have an account?{' '}
+              {t.pages.register.alreadyHaveAccount}{' '}
               <Link
                 href="/login"
                 className="text-[var(--primary)] hover:text-[var(--primary-light)] font-semibold transition-colors"
               >
-                Sign in
+                {t.pages.register.signInLink}
               </Link>
             </p>
           </form>

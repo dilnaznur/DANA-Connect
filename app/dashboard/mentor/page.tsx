@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -8,6 +8,8 @@ import { DashboardNav } from '@/components/DashboardNav'
 import { ApplicationCard } from '@/components/ApplicationCard'
 import { TagInput } from '@/components/TagInput'
 import { OpportunityCardSkeleton } from '@/components/LoadingSkeleton'
+import { OpportunityCard } from '@/components/OpportunityCard'
+import { StatusBadge } from '@/components/StatusBadge'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { translations } from '@/lib/i18n/translations'
 import { Button } from '@/components/ui/button'
@@ -34,7 +36,8 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { Profile, ResearchOpportunity, Application } from '@/lib/types'
-import { Plus, Loader2, Beaker, Mail, Briefcase, FileText, FolderOpen } from 'lucide-react'
+import { Plus, Loader2, Beaker, Mail, Briefcase, FileText, FolderOpen, Search, Linkedin, ExternalLink } from 'lucide-react'
+import { format } from 'date-fns'
 
 const DURATION_OPTIONS = [
   '1 month',
@@ -54,8 +57,17 @@ export default function MentorDashboard() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [opportunities, setOpportunities] = useState<ResearchOpportunity[]>([])
   const [applications, setApplications] = useState<Application[]>([])
+  const [otherOpportunities, setOtherOpportunities] = useState<ResearchOpportunity[]>([])
+  const [myApplications, setMyApplications] = useState<Application[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('opportunities')
+
+  // Apply dialog state (copied from mentee dashboard)
+  const [selectedOpp, setSelectedOpp] = useState<ResearchOpportunity | null>(null)
+  const [motivationText, setMotivationText] = useState('')
+  const [cvFile, setCvFile] = useState<File | null>(null)
+  const [cvError, setCvError] = useState('')
+  const [isSubmittingApplication, setIsSubmittingApplication] = useState(false)
 
   // Post opportunity dialog state
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -71,6 +83,11 @@ export default function MentorDashboard() {
     duration: '',
     customDuration: '',
   })
+
+  const appliedIds = useMemo(
+    () => new Set(myApplications.map((a) => a.opportunity_id)),
+    [myApplications]
+  )
 
   const fetchProfile = useCallback(async (userId: string) => {
     const { data } = await supabase
@@ -88,6 +105,28 @@ export default function MentorDashboard() {
       .eq('mentor_id', userId)
       .order('created_at', { ascending: false })
     setOpportunities(data || [])
+  }, [supabase])
+
+  const fetchOtherOpportunities = useCallback(async (userId: string) => {
+    const { data } = await supabase
+      .from('research_opportunities')
+      .select('*, mentor:profiles(full_name, institution)')
+      .eq('is_open', true)
+      .neq('mentor_id', userId)
+      .order('created_at', { ascending: false })
+    setOtherOpportunities((data as unknown as ResearchOpportunity[]) || [])
+  }, [supabase])
+
+  const fetchMyApplications = useCallback(async (userId: string) => {
+    const { data } = await supabase
+      .from('applications')
+      .select(`
+        *,
+        opportunity:research_opportunities(title, tags, mentor:profiles(full_name, email, linkedin_url))
+      `)
+      .eq('mentee_id', userId)
+      .order('created_at', { ascending: false })
+    setMyApplications(data || [])
   }, [supabase])
 
   const fetchApplications = useCallback(async (oppIds: string[]) => {
@@ -118,18 +157,117 @@ export default function MentorDashboard() {
         return
       }
 
-      await fetchProfile(user.id)
-      await fetchOpportunities(user.id)
+      await Promise.all([
+        fetchProfile(user.id),
+        fetchOpportunities(user.id),
+        fetchOtherOpportunities(user.id),
+        fetchMyApplications(user.id),
+      ])
       setIsLoading(false)
     }
     init()
-  }, [supabase, router, fetchProfile, fetchOpportunities])
+  }, [supabase, router, fetchProfile, fetchOpportunities, fetchOtherOpportunities, fetchMyApplications])
 
   useEffect(() => {
     if (opportunities.length > 0) {
       fetchApplications(opportunities.map((o) => o.id))
     }
   }, [opportunities, fetchApplications])
+
+  const handleApply = (opp: ResearchOpportunity) => {
+    setSelectedOpp(opp)
+    setMotivationText('')
+    setCvFile(null)
+    setCvError('')
+  }
+
+  const handleCvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    setCvError('')
+
+    if (!file) {
+      setCvFile(null)
+      return
+    }
+
+    const allowedExtensions = ['pdf', 'doc', 'docx']
+    const fileExt = file.name.split('.').pop()?.toLowerCase()
+
+    if (!fileExt || !allowedExtensions.includes(fileExt)) {
+      setCvFile(null)
+      setCvError(t.dashboard.validation.onlyPdfDocDocxAllowed)
+      return
+    }
+
+    const maxBytes = 5 * 1024 * 1024
+    if (file.size > maxBytes) {
+      setCvFile(null)
+      setCvError(t.dashboard.validation.fileSizeMax5mb)
+      return
+    }
+
+    setCvFile(file)
+  }
+
+  const handleSubmitApplication = async () => {
+    if (!profile || !selectedOpp) return
+
+    if (motivationText.length < 100) {
+      toast.error(t.dashboard.toasts.appliedMinChars)
+      return
+    }
+
+    setIsSubmittingApplication(true)
+
+    let cvPath: string | null = null
+
+    if (cvFile) {
+      const fileExt = cvFile.name.split('.').pop()?.toLowerCase()
+      if (!fileExt) {
+        toast.error(t.dashboard.toasts.invalidCvFileFormat)
+        setIsSubmittingApplication(false)
+        return
+      }
+
+      const filePath = `${profile.id}/${selectedOpp.id}.${fileExt}`
+      const { error: uploadError } = await supabase.storage
+        .from('cvs')
+        .upload(filePath, cvFile, { upsert: true })
+
+      if (uploadError) {
+        toast.error(uploadError.message)
+        setIsSubmittingApplication(false)
+        return
+      }
+
+      cvPath = filePath
+    }
+
+    const { error } = await supabase.from('applications').insert({
+      mentee_id: profile.id,
+      opportunity_id: selectedOpp.id,
+      motivation_text: motivationText.trim(),
+      cv_url: cvPath,
+      status: 'pending',
+    })
+
+    if (error) {
+      if (error.code === '23505') {
+        toast.error(t.dashboard.toasts.alreadyApplied)
+      } else {
+        toast.error(error.message)
+      }
+    } else {
+      toast.success(t.dashboard.toasts.applicationSubmitted)
+      setSelectedOpp(null)
+      setMotivationText('')
+      setCvFile(null)
+      setCvError('')
+      fetchMyApplications(profile.id)
+    }
+
+    setIsSubmittingApplication(false)
+  }
 
   // Mark pending applications as viewed when Applications tab is opened
   useEffect(() => {
@@ -425,6 +563,17 @@ export default function MentorDashboard() {
             <div className="bg-white border-r border-[var(--border)] min-h-[400px] rounded-xl pt-6 px-3">
               <nav className="space-y-1">
                 <button
+                  onClick={() => setActiveTab('browse-apply')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                    activeTab === 'browse-apply'
+                      ? 'bg-[#EEEDF8] text-[#1B2A72] font-semibold'
+                      : 'text-[var(--text-secondary)] hover:bg-[#F5F5FB]'
+                  }`}
+                >
+                  <Search className="w-5 h-5" />
+                  {t.dashboard.sidebar.browseAndApply}
+                </button>
+                <button
                   onClick={() => setActiveTab('opportunities')}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
                     activeTab === 'opportunities'
@@ -464,6 +613,177 @@ export default function MentorDashboard() {
 
           {/* Right Content Area */}
           <div className="flex-1 min-w-0">
+            {/* Browse & Apply Tab Content */}
+            {activeTab === 'browse-apply' && (
+              <div className="space-y-10">
+                <div>
+                  <h2 className="font-heading text-xl font-semibold text-[var(--primary)] mb-6">
+                    {t.dashboard.sidebar.browseOpportunities}
+                  </h2>
+
+                  {otherOpportunities.length > 0 ? (
+                    <div className="space-y-4">
+                      {otherOpportunities.map((opp) => (
+                        <OpportunityCard
+                          key={opp.id}
+                          title={opp.title}
+                          description={opp.description}
+                          tags={opp.tags || []}
+                          total_spots={opp.total_spots}
+                          filled_spots={opp.filled_spots}
+                          duration={opp.duration}
+                          mentor_name={opp.mentor?.full_name}
+                          mentor_institution={opp.mentor?.institution || undefined}
+                          showApplyButton
+                          isApplied={appliedIds.has(opp.id)}
+                          isFull={opp.filled_spots >= opp.total_spots}
+                          onApply={() => handleApply(opp)}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-20 bg-white rounded-2xl border border-[var(--border)]">
+                      <h3 className="font-heading text-xl font-semibold text-[var(--primary)] mb-2">
+                        {t.dashboard.empty.noOpportunitiesAvailableTitle}
+                      </h3>
+                      <p className="text-[var(--text-secondary)]">
+                        {t.dashboard.empty.noOpportunitiesAvailableDescription}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <h2 className="font-heading text-xl font-semibold text-[var(--primary)] mb-6">
+                    {t.dashboard.sidebar.myApplications}
+                  </h2>
+
+                  {myApplications.length > 0 ? (
+                    <div className="space-y-4">
+                      {myApplications.map((app) => {
+                        const opp = app.opportunity as {
+                          title: string
+                          tags: string[]
+                          mentor: {
+                            full_name: string
+                            email: string | null
+                            linkedin_url: string | null
+                          } | null
+                        } | null
+
+                        const statusDotColor = {
+                          pending: 'bg-amber-500',
+                          viewed: 'bg-blue-500',
+                          accepted: 'bg-green-600',
+                          rejected: 'bg-red-600',
+                        }[app.status] || 'bg-gray-400'
+
+                        const statusLineColor = {
+                          pending: 'border-l-amber-500',
+                          viewed: 'border-l-blue-500',
+                          accepted: 'border-l-green-600',
+                          rejected: 'border-l-red-600',
+                        }[app.status] || 'border-l-gray-400'
+
+                        return (
+                          <div key={app.id} className={`relative pl-8 border-l-4 ${statusLineColor}`}>
+                            <div
+                              className={`absolute -left-2 top-6 w-3 h-3 rounded-full ${statusDotColor} ${
+                                app.status === 'pending' ? 'animate-pulse-badge' : ''
+                              }`}
+                            />
+
+                            <Card className="bg-white border border-[var(--border)] rounded-2xl shadow-card">
+                              <CardContent className="p-6">
+                                <div className="flex justify-between items-start mb-4">
+                                  <div>
+                                    <h3 className="font-heading font-semibold text-lg text-[var(--primary)]">
+                                      {opp?.title}
+                                    </h3>
+                                    {opp?.mentor && (
+                                      <p className="text-[var(--text-secondary)] text-sm">
+                                        {t.dashboard.status.mentor}: {opp.mentor.full_name}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <StatusBadge status={app.status} />
+                                </div>
+
+                                <p className="text-[var(--text-muted)] text-sm mb-4">
+                                  {t.dashboard.status.submitted}:{' '}
+                                  {format(new Date(app.created_at), 'MMMM d, yyyy')}
+                                </p>
+
+                                {app.status === 'viewed' && (
+                                  <p className="text-blue-600 text-sm mb-4">{t.dashboard.dialogs.mentorViewed}</p>
+                                )}
+
+                                {app.status === 'accepted' && opp?.mentor && (
+                                  <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 mb-4">
+                                    <p className="text-green-700 text-sm font-medium mb-1">
+                                      {t.dashboard.dialogs.acceptedCongrats}
+                                    </p>
+                                    <p className="text-green-700 text-sm mb-2">{t.dashboard.status.contactYourMentor}</p>
+                                    <div className="space-y-1">
+                                      {opp.mentor.email && (
+                                        <a
+                                          href={`mailto:${opp.mentor.email}`}
+                                          className="inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:underline"
+                                        >
+                                          <Mail className="w-4 h-4" />
+                                          {t.dashboard.status.email}: {opp.mentor.email}
+                                        </a>
+                                      )}
+                                      {opp.mentor.linkedin_url && (
+                                        <a
+                                          href={opp.mentor.linkedin_url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:underline"
+                                        >
+                                          <Linkedin className="w-4 h-4" />
+                                          {t.dashboard.status.linkedin}: {opp.mentor.linkedin_url}
+                                          <ExternalLink className="w-3 h-3" />
+                                        </a>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+
+                                <div className="bg-hero rounded-lg p-4">
+                                  <Label className="text-xs text-[var(--text-muted)] mb-2 block">
+                                    {t.dashboard.dialogs.yourMotivation}
+                                  </Label>
+                                  <p className="text-[var(--text-secondary)] text-sm">{app.motivation_text}</p>
+                                </div>
+
+                                {opp?.tags && opp.tags.length > 0 && (
+                                  <div className="flex flex-wrap gap-2 mt-4">
+                                    {opp.tags.map((tag, i) => (
+                                      <span key={i} className="tag-pill">
+                                        {tag}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </CardContent>
+                            </Card>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-20 bg-white rounded-2xl border border-[var(--border)]">
+                      <h3 className="font-heading text-xl font-semibold text-[var(--primary)] mb-2">
+                        {t.dashboard.empty.noApplicationsYetTitle}
+                      </h3>
+                      <p className="text-[var(--text-secondary)]">{t.dashboard.empty.noApplicationsYetDescriptionMentee}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Opportunities Tab Content */}
             {activeTab === 'opportunities' && (
               <>
@@ -809,6 +1129,96 @@ export default function MentorDashboard() {
           </Dialog>
         </div>
       </div>
+
+      {/* Application Dialog */}
+      <Dialog
+        open={!!selectedOpp}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedOpp(null)
+            setCvFile(null)
+            setCvError('')
+          }
+        }}
+      >
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-heading">
+              {t.dashboard.dialogs.applyTo}: {selectedOpp?.title}
+            </DialogTitle>
+            <DialogDescription className="text-[var(--text-secondary)]">
+              {t.dashboard.status.mentor}: {selectedOpp?.mentor?.full_name}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-4">
+            <div className="bg-hero rounded-lg p-4 max-h-40 overflow-y-auto">
+              <p className="text-sm text-[var(--text-secondary)]">{selectedOpp?.description}</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="motivation">{t.dashboard.dialogs.whyJoin}</Label>
+              <Textarea
+                id="motivation"
+                value={motivationText}
+                onChange={(e) => setMotivationText(e.target.value)}
+                placeholder={t.dashboard.dialogs.motivationPlaceholder}
+                rows={6}
+                className="border-[1.5px] border-[var(--border)] rounded-lg"
+              />
+              <p
+                className={`text-sm ${
+                  motivationText.length >= 100 ? 'text-green-600' : 'text-red-500'
+                }`}
+              >
+                {motivationText.length} {t.dashboard.dialogs.characters}
+                {motivationText.length < 100 && ` (${t.dashboard.dialogs.minimum100})`}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cvFile">{t.dashboard.dialogs.attachCvOptional}</Label>
+              <input
+                id="cvFile"
+                type="file"
+                accept=".pdf,.doc,.docx"
+                onChange={handleCvChange}
+                className="block w-full text-sm text-[var(--text-secondary)] file:mr-4 file:rounded-lg file:border file:border-[var(--border)] file:bg-white file:px-3 file:py-2 file:text-sm file:font-medium file:text-[var(--primary)] hover:file:bg-hero"
+              />
+              {cvFile && (
+                <p className="text-sm text-[var(--text-secondary)]">
+                  {t.dashboard.dialogs.selectedFile} {cvFile.name}
+                </p>
+              )}
+              {cvError && <p className="text-sm text-red-600">{cvError}</p>}
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setSelectedOpp(null)}
+                className="border-[var(--border)]"
+              >
+                {t.common.cancel}
+              </Button>
+              <Button
+                onClick={handleSubmitApplication}
+                disabled={isSubmittingApplication || motivationText.length < 100}
+                className="bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white rounded-lg"
+              >
+                {isSubmittingApplication ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {t.dashboard.actions.submitting}
+                  </>
+                ) : (
+                  t.dashboard.actions.submitApplication
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
