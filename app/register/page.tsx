@@ -183,13 +183,37 @@ export default function RegisterPage() {
       photo_url: null as string | null,
     }
 
+    localStorage.setItem('dana_pending_profile', JSON.stringify(profileData))
+
+    // Create profile immediately so dashboard access works
+    const { error: profileError } = await supabase.from('profiles').insert({
+      id: profileData.id,
+      full_name: profileData.full_name,
+      email: profileData.email,
+      phone: profileData.phone,
+      role: profileData.role,
+      specialization: profileData.specialization,
+      title: profileData.title,
+      motivation: profileData.motivation,
+      linkedin_url: profileData.linkedin_url,
+      institution: profileData.institution,
+      photo_url: profileData.photo_url,
+    })
+
+    if (profileError && profileError.code !== '23505') {
+      setError(profileError.message)
+      setIsLoading(false)
+      return
+    }
+
+    // Profile created - pending data no longer needed
+    localStorage.removeItem('dana_pending_profile')
+
     if (photoFile) {
       uploadPhotoInBackground(supabase, authData.user.id, photoFile).catch((err) => {
         console.error('Background photo upload failed:', err)
       })
     }
-
-    localStorage.setItem('dana_pending_profile', JSON.stringify(profileData))
 
     // No email confirmation needed - redirect directly
     if (formData.role === 'mentor') {
