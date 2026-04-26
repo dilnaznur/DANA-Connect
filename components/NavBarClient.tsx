@@ -86,7 +86,7 @@ export function NavBarClient() {
               alt="DANA Connect"
               width={160}
               height={90}
-              className="h-10 sm:h-11 w-auto"
+              className="h-12 sm:h-14 md:h-14 w-auto"
               priority
             />
             <span className="sr-only">DANA Connect</span>
