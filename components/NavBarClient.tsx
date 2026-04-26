@@ -84,9 +84,9 @@ export function NavBarClient() {
             <Image
               src="/dana-logo.png"
               alt="DANA Connect"
-              width={56}
-              height={32}
-              className="h-7 w-auto"
+              width={160}
+              height={90}
+              className="h-10 sm:h-11 w-auto"
               priority
             />
             <span className="sr-only">DANA Connect</span>
