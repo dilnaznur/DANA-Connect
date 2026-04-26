@@ -82,6 +82,8 @@ export default function MentorDashboard() {
     total_spots: 2,
     duration: '',
     customDuration: '',
+    contact_email: '',
+    contact_telegram: '',
   })
 
   const appliedIds = useMemo(
@@ -96,7 +98,17 @@ export default function MentorDashboard() {
       .eq('id', userId)
       .single()
     setProfile(data)
+
+    if (data) {
+      setNewOpp((prev) => ({
+        ...prev,
+        contact_email: prev.contact_email || data.email || '',
+        contact_telegram: prev.contact_telegram || data.phone || '',
+      }))
+    }
   }, [supabase])
+
+  const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
 
   const fetchOpportunities = useCallback(async (userId: string) => {
     const { data } = await supabase
@@ -327,6 +339,16 @@ export default function MentorDashboard() {
       return
     }
 
+    if (!newOpp.contact_email.trim() || !newOpp.contact_telegram.trim()) {
+      toast.error(t.dashboard.toasts.contactRequired)
+      return
+    }
+
+    if (!isValidEmail(newOpp.contact_email)) {
+      toast.error(t.dashboard.toasts.invalidEmail)
+      return
+    }
+
     setIsSubmitting(true)
 
     const { error } = await supabase.from('research_opportunities').insert({
@@ -336,6 +358,8 @@ export default function MentorDashboard() {
       tags: newOpp.tags,
       total_spots: newOpp.total_spots,
       duration: finalDuration || null,
+      contact_email: newOpp.contact_email.trim(),
+      contact_telegram: newOpp.contact_telegram.trim(),
       is_open: true,
       filled_spots: 0,
     })
@@ -352,6 +376,8 @@ export default function MentorDashboard() {
         total_spots: 2,
         duration: '',
         customDuration: '',
+        contact_email: profile.email || '',
+        contact_telegram: profile.phone || '',
       })
       fetchOpportunities(profile.id)
     }
@@ -843,6 +869,34 @@ export default function MentorDashboard() {
                             onChange={(tags) => setNewOpp({ ...newOpp, tags })}
                             placeholder="Add tags (e.g., AI, Bioinformatics)"
                           />
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="contact_email">{t.dashboard.dialogs.contactEmailLabel}</Label>
+                            <Input
+                              id="contact_email"
+                              type="email"
+                              value={newOpp.contact_email}
+                              onChange={(e) =>
+                                setNewOpp({ ...newOpp, contact_email: e.target.value })
+                              }
+                              placeholder={t.dashboard.dialogs.contactEmailPlaceholder}
+                              className="border-[1.5px] border-[var(--border)] rounded-lg"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="contact_telegram">{t.dashboard.dialogs.contactTelegramLabel}</Label>
+                            <Input
+                              id="contact_telegram"
+                              value={newOpp.contact_telegram}
+                              onChange={(e) =>
+                                setNewOpp({ ...newOpp, contact_telegram: e.target.value })
+                              }
+                              placeholder={t.dashboard.dialogs.contactTelegramPlaceholder}
+                              className="border-[1.5px] border-[var(--border)] rounded-lg"
+                            />
+                          </div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-2">

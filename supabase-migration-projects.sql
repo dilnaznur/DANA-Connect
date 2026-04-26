@@ -8,8 +8,8 @@ CREATE TABLE projects (
   title text NOT NULL,
   description text NOT NULL,
   tags text[] DEFAULT '{}',
-  contact_email text,
-  contact_telegram text,
+  contact_email text NOT NULL,
+  contact_telegram text NOT NULL,
   deadline date,
   max_members integer DEFAULT 5 CHECK (max_members >= 1),
   filled_members integer DEFAULT 1 CHECK (filled_members >= 1),
@@ -18,16 +18,19 @@ CREATE TABLE projects (
   updated_at timestamptz DEFAULT now()
 );
 
+-- Compatibility view: app code uses open_projects
+CREATE VIEW open_projects AS SELECT * FROM projects;
+
 -- PROJECT REQUESTS table (join requests)
 CREATE TABLE project_requests (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   project_id uuid REFERENCES projects(id) ON DELETE CASCADE NOT NULL,
-  user_id uuid REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  requester_id uuid REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   message text,
   status text DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected')),
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now(),
-  UNIQUE(project_id, user_id)
+  UNIQUE(project_id, requester_id)
 );
 
 -- Triggers for updated_at
@@ -69,7 +72,7 @@ CREATE POLICY "user_delete_own_projects" ON projects
 
 -- Users can manage their own requests
 CREATE POLICY "user_manage_own_requests" ON project_requests
-  FOR ALL USING (user_id = auth.uid());
+  FOR ALL USING (requester_id = auth.uid());
 
 -- Project creators can read requests for their projects
 CREATE POLICY "creator_read_requests" ON project_requests

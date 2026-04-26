@@ -250,6 +250,8 @@ export const translations = {
       },
       validation: {
         titleAndDescriptionRequired: 'Title and description are required',
+        contactRequired: 'Contact email and Telegram are required',
+        invalidEmail: 'Please enter a valid email address',
       },
       toasts: {
         projectPosted: 'Project posted!',
@@ -350,6 +352,10 @@ export const translations = {
         motivationPlaceholder:
           'Explain your interest, relevant experience, and what you hope to learn...',
         attachCvOptional: 'Attach your CV (optional)',
+        contactEmailLabel: 'Contact Email *',
+        contactEmailPlaceholder: 'you@example.com',
+        contactTelegramLabel: 'WhatsApp / Telegram *',
+        contactTelegramPlaceholder: '@username or +7...',
         selectedFile: 'Selected file:',
         characters: 'characters',
         minimum100: 'minimum 100',
@@ -378,6 +384,8 @@ export const translations = {
         opportunityOpened: 'Opportunity opened',
         opportunityClosed: 'Opportunity closed',
         titleAndDescriptionRequired: 'Title and description are required',
+        contactRequired: 'Contact email and WhatsApp/Telegram are required',
+        invalidEmail: 'Please enter a valid email address',
         opportunityPublished: 'Opportunity published!',
         applicationAccepted: 'Application accepted!',
         applicationRejected: 'Application rejected',
@@ -664,6 +672,8 @@ export const translations = {
       },
       validation: {
         titleAndDescriptionRequired: 'Нужны название и описание',
+        contactRequired: 'Нужны Email и Telegram для связи',
+        invalidEmail: 'Введите корректный email',
       },
       toasts: {
         projectPosted: 'Проект опубликован!',
@@ -764,6 +774,10 @@ export const translations = {
         motivationPlaceholder:
           'Опишите ваш интерес, опыт и чему вы хотите научиться...',
         attachCvOptional: 'Прикрепите CV (необязательно)',
+        contactEmailLabel: 'Email для связи *',
+        contactEmailPlaceholder: 'you@example.com',
+        contactTelegramLabel: 'WhatsApp / Telegram *',
+        contactTelegramPlaceholder: '@username или +7...',
         selectedFile: 'Выбранный файл:',
         characters: 'символов',
         minimum100: 'минимум 100',
@@ -792,6 +806,8 @@ export const translations = {
         opportunityOpened: 'Возможность открыта',
         opportunityClosed: 'Возможность закрыта',
         titleAndDescriptionRequired: 'Нужны заголовок и описание',
+        contactRequired: 'Нужны Email и WhatsApp/Telegram для связи',
+        invalidEmail: 'Введите корректный email',
         opportunityPublished: 'Возможность опубликована!',
         applicationAccepted: 'Заявка принята!',
         applicationRejected: 'Заявка отклонена',
@@ -1078,6 +1094,8 @@ export const translations = {
       },
       validation: {
         titleAndDescriptionRequired: 'Атау мен сипаттама қажет',
+        contactRequired: 'Байланыс үшін Email және Telegram қажет',
+        invalidEmail: 'Дұрыс email енгізіңіз',
       },
       toasts: {
         projectPosted: 'Жоба жарияланды!',
@@ -1178,6 +1196,10 @@ export const translations = {
         motivationPlaceholder:
           'Қызығушылығыңызды, тәжірибеңізді және нені үйренгіңіз келетінін жазыңыз...',
         attachCvOptional: 'CV-іңізді тіркеңіз (міндетті емес)',
+        contactEmailLabel: 'Байланыс Email *',
+        contactEmailPlaceholder: 'you@example.com',
+        contactTelegramLabel: 'WhatsApp / Telegram *',
+        contactTelegramPlaceholder: '@username немесе +7...',
         selectedFile: 'Таңдалған файл:',
         characters: 'таңба',
         minimum100: 'кемінде 100',
@@ -1206,6 +1228,8 @@ export const translations = {
         opportunityOpened: 'Мүмкіндік ашылды',
         opportunityClosed: 'Мүмкіндік жабылды',
         titleAndDescriptionRequired: 'Тақырып пен сипаттама қажет',
+        contactRequired: 'Байланыс үшін Email және WhatsApp/Telegram қажет',
+        invalidEmail: 'Дұрыс email енгізіңіз',
         opportunityPublished: 'Мүмкіндік жарияланды!',
         applicationAccepted: 'Өтінім қабылданды!',
         applicationRejected: 'Өтінім қабылданбады',

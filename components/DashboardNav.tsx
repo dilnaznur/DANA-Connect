@@ -87,6 +87,15 @@ export function DashboardNav({ userName, onSignOut }: DashboardNavProps) {
             <span className="text-[var(--text-secondary)] font-medium min-w-0 truncate max-w-[140px] sm:max-w-none">
               {userName}
             </span>
+            <Link href="/profile/edit">
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-[var(--border)] text-[var(--text-secondary)] hover:text-[#1B2A72] hover:bg-[#EEEDF8] btn-hover-lift"
+              >
+                {t.nav.editProfile}
+              </Button>
+            </Link>
             <Button
               variant="outline"
               size="sm"

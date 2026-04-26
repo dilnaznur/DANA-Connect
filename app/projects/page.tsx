@@ -35,6 +35,8 @@ export default function ProjectsPage() {
   const { language } = useLanguage()
   const t = translations[language]
 
+  const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
+
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [projects, setProjects] = useState<Project[]>([])
   const [myProjects, setMyProjects] = useState<Project[]>([])
@@ -92,7 +94,7 @@ export default function ProjectsPage() {
 
   const fetchProjects = useCallback(async () => {
     const { data } = await supabase
-      .from('open_projects')
+      .from('projects')
       .select('*, creator:profiles(full_name, email, institution)')
       .eq('is_open', true)
       .order('created_at', { ascending: false })
@@ -101,7 +103,7 @@ export default function ProjectsPage() {
 
   const fetchMyProjects = useCallback(async (userId: string) => {
     const { data } = await supabase
-      .from('open_projects')
+      .from('projects')
       .select('*, creator:profiles(full_name, email, institution)')
       .eq('creator_id', userId)
       .order('created_at', { ascending: false })
@@ -157,15 +159,25 @@ export default function ProjectsPage() {
       return
     }
 
+    if (!newProject.contact_email.trim() || !newProject.contact_telegram.trim()) {
+      toast.error(t.projects.validation.contactRequired)
+      return
+    }
+
+    if (!isValidEmail(newProject.contact_email)) {
+      toast.error(t.projects.validation.invalidEmail)
+      return
+    }
+
     setIsSubmitting(true)
 
-    const { error } = await supabase.from('open_projects').insert({
+    const { error } = await supabase.from('projects').insert({
       creator_id: currentUserId,
       title: newProject.title.trim(),
       description: newProject.description.trim(),
       tags: newProject.tags,
-      contact_email: newProject.contact_email.trim() || null,
-      contact_telegram: newProject.contact_telegram.trim() || null,
+      contact_email: newProject.contact_email.trim(),
+      contact_telegram: newProject.contact_telegram.trim(),
       deadline: newProject.deadline || null,
       max_members: newProject.max_members,
       filled_members: 1,
@@ -248,7 +260,7 @@ export default function ProjectsPage() {
     const shouldClose = newFilledMembers >= managedProject.max_members
 
     const { error: projectError } = await supabase
-      .from('open_projects')
+      .from('projects')
       .update({
         filled_members: newFilledMembers,
         is_open: !shouldClose,
@@ -301,7 +313,7 @@ export default function ProjectsPage() {
     setIsDeletingProject(true)
 
     const { error } = await supabase
-      .from('open_projects')
+      .from('projects')
       .delete()
       .eq('id', managedProject.id)
       .eq('creator_id', currentUserId)
@@ -555,7 +567,7 @@ export default function ProjectsPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="contact_email">{t.projects.dialog.contactEmailLabel}</Label>
+                <Label htmlFor="contact_email">{t.projects.dialog.contactEmailLabel} *</Label>
                 <Input
                   id="contact_email"
                   type="email"
@@ -566,7 +578,7 @@ export default function ProjectsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="contact_telegram">{t.projects.dialog.telegramLabel}</Label>
+                <Label htmlFor="contact_telegram">{t.projects.dialog.telegramLabel} *</Label>
                 <Input
                   id="contact_telegram"
                   value={newProject.contact_telegram}

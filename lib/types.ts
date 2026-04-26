@@ -28,6 +28,8 @@ export interface ResearchOpportunity {
   filled_spots: number
   is_open: boolean
   duration: string | null
+  contact_email?: string | null
+  contact_telegram?: string | null
   created_at: string
   updated_at: string
   mentor?: Pick<Profile, 'full_name' | 'institution' | 'specialization'>
@@ -43,7 +45,7 @@ export interface Application {
   created_at: string
   updated_at: string
   mentee?: Pick<Profile, 'full_name' | 'email' | 'institution' | 'specialization' | 'linkedin_url'>
-  opportunity?: Pick<ResearchOpportunity, 'title' | 'tags'> & {
+  opportunity?: Pick<ResearchOpportunity, 'title' | 'tags' | 'contact_email' | 'contact_telegram'> & {
     mentor?: Pick<Profile, 'full_name' | 'email' | 'linkedin_url'>
   }
 }
@@ -68,7 +70,7 @@ export interface Project {
 export interface ProjectRequest {
   id: string
   project_id: string
-  user_id: string
+  requester_id: string
   message: string | null
   status: ProjectRequestStatus
   created_at: string

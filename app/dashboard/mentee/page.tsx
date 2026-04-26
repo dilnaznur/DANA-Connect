@@ -122,7 +122,7 @@ export default function MenteeDashboard() {
       .from('applications')
       .select(`
         *,
-        opportunity:research_opportunities(title, tags, mentor:profiles(full_name, email, linkedin_url))
+        opportunity:research_opportunities(title, tags, contact_email, contact_telegram, mentor:profiles(full_name, email, linkedin_url))
       `)
       .eq('mentee_id', userId)
       .order('created_at', { ascending: false })
@@ -134,7 +134,7 @@ export default function MenteeDashboard() {
       .from('project_requests')
       .select(`
         *,
-        project:open_projects(title, description, tags, contact_email, contact_telegram, creator_id, creator:profiles(full_name, email))
+        project:projects(title, description, tags, contact_email, contact_telegram, creator_id, creator:profiles(full_name, email))
       `)
       .eq('requester_id', userId)
       .order('created_at', { ascending: false })
@@ -506,12 +506,29 @@ export default function MenteeDashboard() {
                       const opp = app.opportunity as {
                         title: string
                         tags: string[]
+                        contact_email: string | null
+                        contact_telegram: string | null
                         mentor: {
                           full_name: string
                           email: string | null
                           linkedin_url: string | null
                         } | null
                       } | null
+
+                      const formatContactLink = (value: string) => {
+                        const trimmed = value.trim()
+                        if (!trimmed) return '#'
+                        if (/^https?:\/\//i.test(trimmed)) return trimmed
+
+                        const withoutAt = trimmed.startsWith('@') ? trimmed.slice(1) : trimmed
+                        const looksLikeHandle = /^[a-zA-Z0-9_]{3,}$/.test(withoutAt)
+                        if (looksLikeHandle) return `https://t.me/${withoutAt}`
+
+                        const looksLikePhone = /^[+0-9][0-9\s()\-]{6,}$/.test(trimmed)
+                        if (looksLikePhone) return `tel:${trimmed.replace(/\s+/g, '')}`
+
+                        return '#'
+                      }
 
                       // Status dot color mapping
                       const statusDotColor = {
@@ -576,17 +593,33 @@ export default function MenteeDashboard() {
                                     {t.dashboard.status.contactYourMentor}
                                   </p>
                                   <div className="space-y-1">
-                                    {opp.mentor.email && (
+                                    {(opp.contact_email || opp.mentor.email) && (
                                       <a
-                                        href={`mailto:${opp.mentor.email}`}
+                                        href={`mailto:${opp.contact_email || opp.mentor.email}`}
                                         className="inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:underline min-w-0"
                                       >
                                         <Mail className="w-4 h-4" />
                                         <span className="min-w-0 break-all sm:break-normal">
-                                          {t.dashboard.status.email}: {opp.mentor.email}
+                                          {t.dashboard.status.email}: {opp.contact_email || opp.mentor.email}
                                         </span>
                                       </a>
                                     )}
+
+                                    {opp.contact_telegram && (
+                                      <a
+                                        href={formatContactLink(opp.contact_telegram)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:underline min-w-0"
+                                      >
+                                        <Send className="w-4 h-4" />
+                                        <span className="min-w-0 break-all sm:break-normal">
+                                          {t.dashboard.status.telegram}: {opp.contact_telegram}
+                                        </span>
+                                        <ExternalLink className="w-3 h-3" />
+                                      </a>
+                                    )}
+
                                     {opp.mentor.linkedin_url && (
                                       <a
                                         href={opp.mentor.linkedin_url}
