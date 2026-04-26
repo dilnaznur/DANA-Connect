@@ -181,6 +181,51 @@ export const translations = {
         institutions: 'research institutions in the region',
       },
     },
+    faq: {
+      title: 'FAQ — DANA Connect',
+      items: [
+        {
+          q: 'What is DANA Connect?',
+          a: 'A platform that connects girls from Kazakhstan with women researchers and STEM professionals from around the world through mentorship and online internships. Completely free.',
+        },
+        {
+          q: 'How do I register?',
+          a: 'Click “Get Started” in the menu → fill out the form: name, email, password, photo (optional), position and university. During registration, you choose a role — mentor or mentee.',
+        },
+        {
+          q: 'What is the difference between a mentor and a mentee?',
+          a: 'A mentor shares expertise and takes an intern into her project. A mentee learns and grows under the mentor’s guidance.',
+        },
+        {
+          q: 'Where can I find mentors?',
+          a: 'Go to the Mentors section in the menu — you’ll see cards of all mentors on the platform with their specialization and university.',
+        },
+        {
+          q: 'What is the Research section?',
+          a: 'This is where real research projects are posted — you can take part in them.',
+        },
+        {
+          q: 'How do I apply for an internship?',
+          a: 'Open the Research section → choose a project → click Apply.',
+        },
+        {
+          q: 'What languages is the site available in?',
+          a: 'Available in three languages: English, Russian, Kazakh — switch using EN / RU / KZ in the top menu.',
+        },
+        {
+          q: 'Is there a Projects section?',
+          a: 'Yes — there is a Projects tab in the menu, a separate page for community projects.',
+        },
+        {
+          q: 'How does Apply work?',
+          a: 'When you click Apply — you see the mentor’s contacts (email / Telegram / WhatsApp). Then you write directly and all project communication goes through these channels. DANA Connect is an entry point, not an intermediary.',
+        },
+        {
+          q: 'How do I get a certificate?',
+          a: 'To receive a DANA Connect certificate, you need to register on the platform, complete a joint project (with a mentor or mentee), and then send a 1-page PDF report to danaconnectkz@gmail.com describing the project, linking to the results, listing participant names, and including the mentor’s signature. After review, the certificate is issued to both sides.',
+        },
+      ],
+    },
     projects: {
       heroLabel: 'COMMUNITY · KAZAKHSTAN',
       heroTitle: 'Open Projects',
@@ -603,6 +648,51 @@ export const translations = {
         institutions: 'научных институтов в регионе',
       },
     },
+    faq: {
+      title: 'FAQ — DANA Connect',
+      items: [
+        {
+          q: 'Что такое DANA Connect?',
+          a: 'Платформа, которая соединяет девушек из Казахстана с женщинами-исследователями и STEM-специалистами со всего мира через менторство и онлайн-стажировки. Полностью бесплатно.',
+        },
+        {
+          q: 'Как зарегистрироваться?',
+          a: 'Нажми кнопку «Get Started» в меню → заполни форму: имя, email, пароль, фото (опционально), должность и университет. При регистрации выбираешь роль — ментор или менти.',
+        },
+        {
+          q: 'Чем отличается ментор от менти?',
+          a: 'Ментор — делится экспертизой и берёт стажёра в свой проект. Менти — учится и растёт под руководством ментора.',
+        },
+        {
+          q: 'Где найти менторов?',
+          a: 'Раздел Mentors в меню — там карточки всех менторов платформы с их специализацией и университетом.',
+        },
+        {
+          q: 'Что такое раздел Research?',
+          a: 'Здесь размещены реальные исследовательские проекты, в которых можно участвовать.',
+        },
+        {
+          q: 'Как подать заявку на стажировку?',
+          a: 'Открой раздел Research → выбери проект → нажми кнопку Apply.',
+        },
+        {
+          q: 'Сайт на каких языках?',
+          a: 'Доступен на трёх языках: английский, русский, казахский — переключатель EN / RU / KZ в верхнем меню.',
+        },
+        {
+          q: 'Есть ли раздел Projects?',
+          a: 'Да, в меню есть вкладка Projects — отдельная страница для проектов сообщества.',
+        },
+        {
+          q: 'Как работает Apply?',
+          a: 'Когда нажимаешь Apply — видишь контакты ментора (email / Telegram / WhatsApp). Дальше пишешь напрямую и вся коммуникация по проекту идёт через эти каналы. DANA Connect — это точка входа, а не посредник.',
+        },
+        {
+          q: 'Как получить сертификат?',
+          a: 'Чтобы получить сертификат DANA Connect, необходимо зарегистрироваться на платформе, завершить совместный проект (с ментором или менти), а затем отправить 1-страничный PDF-отчёт на почту danaconnectkz@gmail.com с описанием проекта, ссылкой на результаты, именами участников и подписью ментора. После проверки сертификат выдаётся обеим сторонам.',
+        },
+      ],
+    },
     projects: {
       heroLabel: 'СООБЩЕСТВО · КАЗАХСТАН',
       heroTitle: 'Открытые проекты',
@@ -1024,6 +1114,51 @@ export const translations = {
         universities: 'Қазақстандағы университеттер',
         institutions: 'аймақтағы ғылыми мекемелер',
       },
+    },
+    faq: {
+      title: 'FAQ — DANA Connect',
+      items: [
+        {
+          q: 'DANA Connect деген не?',
+          a: 'Қазақстандағы қыздарды әлемнің түкпір‑түкпіріндегі әйел зерттеушілермен және STEM мамандарымен тәлімгерлік пен онлайн тағылымдама арқылы байланыстыратын платформа. Толығымен тегін.',
+        },
+        {
+          q: 'Қалай тіркелемін?',
+          a: 'Мәзірден «Get Started» батырмасын бас → форманы толтыр: аты‑жөні, email, құпиясөз, фото (міндетті емес), лауазымы және университеті. Тіркелгенде рөліңді таңдайсың — тәлімгер немесе менти.',
+        },
+        {
+          q: 'Тәлімгер мен ментидің айырмашылығы қандай?',
+          a: 'Тәлімгер — тәжірибесімен бөлісіп, тағылымгерді өз жобасына алады. Менти — тәлімгердің жетекшілігімен үйреніп, дамиды.',
+        },
+        {
+          q: 'Тәлімгерлерді қайдан табуға болады?',
+          a: 'Мәзірдегі Mentors бөліміне кір — онда платформаның барлық тәлімгерлерінің мамандануы мен университеті көрсетілген карточкалар бар.',
+        },
+        {
+          q: 'Research бөлімі деген не?',
+          a: 'Мұнда қатысуға болатын нақты зерттеу жобалары жарияланады.',
+        },
+        {
+          q: 'Тағылымдамаға қалай өтінім беремін?',
+          a: 'Research бөліміне кір → жобаны таңда → Apply батырмасын бас.',
+        },
+        {
+          q: 'Сайт қандай тілдерде қолжетімді?',
+          a: 'Үш тілде қолжетімді: ағылшын, орыс, қазақ — жоғарғы мәзірдегі EN / RU / KZ ауыстырғышы арқылы.',
+        },
+        {
+          q: 'Projects бөлімі бар ма?',
+          a: 'Иә — мәзірде Projects қойындысы бар, бұл қауымдастық жобаларына арналған бөлек бет.',
+        },
+        {
+          q: 'Apply қалай жұмыс істейді?',
+          a: 'Apply батырмасын басқанда — тәлімгердің байланыс деректерін көресің (email / Telegram / WhatsApp). Одан кейін тікелей жазасың және жобадағы барлық коммуникация осы арналар арқылы жүреді. DANA Connect — кіріс нүктесі, делдал емес.',
+        },
+        {
+          q: 'Сертификатты қалай алуға болады?',
+          a: 'DANA Connect сертификатын алу үшін платформаға тіркелу керек, бірлескен жобаны аяқтау (тәлімгермен немесе ментимен), содан кейін жобаның сипаттамасы, нәтиже сілтемесі, қатысушылардың аты‑жөні және тәлімгердің қолы көрсетілген 1 беттік PDF есепті danaconnectkz@gmail.com поштасына жіберу қажет. Тексерістен кейін сертификат екі тарапқа да беріледі.',
+        },
+      ],
     },
     projects: {
       heroLabel: 'ҚАУЫМДАСТЫҚ · ҚАЗАҚСТАН',

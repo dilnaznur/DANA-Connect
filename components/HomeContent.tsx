@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { HeroBackground } from '@/components/HeroBackground'
+import { FaqSection } from '@/components/FaqSection'
 import { MentorCard } from '@/components/MentorCard'
 import { OpportunityCard } from '@/components/OpportunityCard'
 import { Button } from '@/components/ui/button'
@@ -265,6 +266,8 @@ export function HomeContent({
           </div>
         </div>
       </section>
+
+      <FaqSection />
     </>
   )
 }

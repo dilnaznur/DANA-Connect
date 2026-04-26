@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic'
 import { NavBar } from '@/components/NavBar'
 import { Footer } from '@/components/Footer'
+import { FaqSection } from '@/components/FaqSection'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { translations } from '@/lib/i18n/translations'
 
@@ -113,6 +114,8 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
+
+      <FaqSection />
 
       <Footer />
     </div>
