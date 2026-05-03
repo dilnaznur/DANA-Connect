@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { StatusBadge } from '@/components/StatusBadge'
 import { Application } from '@/lib/types'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { translations } from '@/lib/i18n/translations'
 import { format } from 'date-fns'
 import { Mail, Linkedin, ExternalLink } from 'lucide-react'
 
@@ -25,6 +27,9 @@ export function ApplicationCard({
   onReject,
   onViewCv,
 }: ApplicationCardProps) {
+  const { language } = useLanguage()
+  const t = translations[language]
+
   const canShowActions =
     showActions && (application.status === 'pending' || application.status === 'viewed')
   const isAccepted = application.status === 'accepted'
@@ -57,7 +62,7 @@ export function ApplicationCard({
         {showMenteeContact && isAccepted && application.mentee && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
             <h4 className="text-green-700 font-semibold text-sm mb-3">
-              ✓ Accepted — Contact Information
+              ✓ {t.dashboard.applicationCard.acceptedContactTitle}
             </h4>
             <div className="space-y-2">
               {application.mentee.email && (
@@ -77,13 +82,13 @@ export function ApplicationCard({
                   className="flex items-center gap-2 text-sm text-green-700 hover:underline"
                 >
                   <Linkedin className="w-4 h-4" />
-                  LinkedIn Profile
+                  {t.dashboard.applicationCard.linkedinProfile}
                   <ExternalLink className="w-3 h-3" />
                 </a>
               )}
             </div>
             <p className="text-green-600 text-xs mt-3">
-              Reach out to welcome them to your research project
+              {t.dashboard.applicationCard.reachOut}
             </p>
           </div>
         )}
@@ -91,7 +96,9 @@ export function ApplicationCard({
         {/* Subtle Contact Info Box - shown for pending/viewed when showMenteeContact=true */}
         {showMenteeContact && isPendingOrViewed && application.mentee && (
           <div className="bg-[#EEEDF8] rounded-lg p-3 mb-4">
-            <p className="text-[#1B2A72] text-sm font-medium mb-2">Applicant Contact</p>
+            <p className="text-[#1B2A72] text-sm font-medium mb-2">
+              {t.dashboard.applicationCard.applicantContact}
+            </p>
             <div className="flex flex-wrap gap-4">
               {application.mentee.email && (
                 <a
@@ -110,7 +117,7 @@ export function ApplicationCard({
                   className="inline-flex items-center gap-2 text-sm text-[#1B2A72] hover:underline"
                 >
                   <Linkedin className="w-4 h-4" />
-                  LinkedIn
+                  {t.dashboard.status.linkedin}
                   <ExternalLink className="w-3 h-3" />
                 </a>
               )}
@@ -121,13 +128,14 @@ export function ApplicationCard({
         {application.opportunity && (
           <div className="mb-4">
             <Badge variant="outline" className="text-[var(--text-secondary)]">
-              For: {application.opportunity.title}
+              {t.dashboard.applicationCard.forLabel} {application.opportunity.title}
             </Badge>
           </div>
         )}
 
         <p className="text-[var(--text-muted)] text-sm mb-4">
-          Submitted: {format(new Date(application.created_at), 'MMMM d, yyyy')}
+          {t.dashboard.applicationCard.submittedLabel}{' '}
+          {format(new Date(application.created_at), 'MMMM d, yyyy')}
         </p>
 
         <div className="bg-[#F7F7FB] rounded-xl p-4 mb-4">
@@ -143,7 +151,7 @@ export function ApplicationCard({
               onClick={() => onViewCv?.(application.cv_url!)}
               className="inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:underline"
             >
-              View CV
+              {t.dashboard.applicationCard.viewCv}
               <ExternalLink className="w-3 h-3" />
             </button>
           </div>
@@ -156,14 +164,14 @@ export function ApplicationCard({
               onClick={onReject}
               className="border-red-300 text-red-600 hover:bg-red-50 btn-hover-lift"
             >
-              Reject ✗
+              {t.dashboard.actions.reject} ✗
             </Button>
             <Button
               variant="outline"
               onClick={onAccept}
               className="border-green-300 text-green-600 hover:bg-green-50 btn-hover-lift"
             >
-              Accept ✓
+              {t.dashboard.actions.accept} ✓
             </Button>
           </div>
         )}

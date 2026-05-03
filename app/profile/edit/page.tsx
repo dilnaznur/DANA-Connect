@@ -14,6 +14,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { Profile } from '@/lib/types'
 import { Loader2, Camera, X, Mail } from 'lucide-react'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { translations } from '@/lib/i18n/translations'
 
 const HeroBackground = dynamic(
   () => import('@/components/HeroBackground').then((mod) => ({ default: mod.HeroBackground })),
@@ -34,6 +36,8 @@ export default function EditProfilePage() {
   const router = useRouter()
   const supabase = createClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { language } = useLanguage()
+  const t = translations[language]
 
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -67,7 +71,7 @@ export default function EditProfilePage() {
         .single()
 
       if (error || !profileData) {
-        toast.error('Failed to load profile')
+        toast.error(t.pages.profileEdit.toasts.failedToLoadProfile)
         router.push('/')
         return
       }
@@ -94,7 +98,7 @@ export default function EditProfilePage() {
     }
 
     fetchProfile()
-  }, [supabase, router])
+  }, [supabase, router, t.pages.profileEdit.toasts.failedToLoadProfile])
 
   const updateField = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -104,11 +108,11 @@ export default function EditProfilePage() {
     const file = e.target.files?.[0]
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('Photo must be less than 5MB')
+        toast.error(t.pages.profileEdit.toasts.photoTooLarge)
         return
       }
       if (!file.type.startsWith('image/')) {
-        toast.error('Please select an image file')
+        toast.error(t.pages.profileEdit.toasts.photoInvalidType)
         return
       }
       setPhotoFile(file)
@@ -128,7 +132,7 @@ export default function EditProfilePage() {
     if (!profile) return
 
     if (!formData.firstName.trim() || !formData.lastName.trim()) {
-      toast.error('First and last name are required')
+      toast.error(t.pages.profileEdit.toasts.nameRequired)
       return
     }
 
@@ -146,7 +150,7 @@ export default function EditProfilePage() {
         .upload(filePath, photoFile, { upsert: true })
 
       if (uploadError) {
-        toast.error('Failed to upload photo: ' + uploadError.message)
+        toast.error(`${t.pages.profileEdit.toasts.failedToUploadPhoto}: ${uploadError.message}`)
         setIsSaving(false)
         return
       }
@@ -170,12 +174,12 @@ export default function EditProfilePage() {
       .eq('id', profile.id)
 
     if (updateError) {
-      toast.error('Failed to update profile: ' + updateError.message)
+      toast.error(`${t.pages.profileEdit.toasts.failedToUpdateProfile}: ${updateError.message}`)
       setIsSaving(false)
       return
     }
 
-    toast.success('Profile updated successfully!')
+    toast.success(t.pages.profileEdit.toasts.updatedSuccess)
 
     // Redirect to appropriate dashboard
     const dashboardUrl = profile.role === 'mentor' ? '/dashboard/mentor' : '/dashboard/mentee'
@@ -213,10 +217,10 @@ export default function EditProfilePage() {
         <HeroBackground />
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           <h1 className="font-heading text-2xl sm:text-[32px] lg:text-[42px] font-extrabold text-[#1B2A72] leading-tight">
-            Edit Your Profile
+            {t.pages.profileEdit.title}
           </h1>
           <p className="text-base sm:text-lg text-[var(--text-secondary)] mt-2">
-            Update your information and personalize your profile
+            {t.pages.profileEdit.subtitle}
           </p>
         </div>
       </section>
@@ -234,7 +238,7 @@ export default function EditProfilePage() {
                       <div className="relative w-20 h-20 sm:w-24 sm:h-24">
                         <Image
                           src={displayPhoto}
-                          alt="Profile photo"
+                          alt={t.pages.profileEdit.photoAlt}
                           fill
                           className="rounded-full object-cover"
                         />
@@ -266,9 +270,9 @@ export default function EditProfilePage() {
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <Label className="text-sm font-medium text-[#1B2A72]">Profile Photo</Label>
+                    <Label className="text-sm font-medium text-[#1B2A72]">{t.pages.profileEdit.photoLabel}</Label>
                     <p className="text-sm text-[var(--text-muted)] mt-1">
-                      Upload a photo to personalize your profile. Max 5MB.
+                      {t.pages.profileEdit.photoHelp}
                     </p>
                     {displayPhoto && !photoPreview && (
                       <button
@@ -276,7 +280,7 @@ export default function EditProfilePage() {
                         onClick={() => fileInputRef.current?.click()}
                         className="text-sm text-[var(--accent)] hover:underline mt-2"
                       >
-                        Change photo
+                        {t.pages.profileEdit.changePhoto}
                       </button>
                     )}
                   </div>
@@ -285,31 +289,31 @@ export default function EditProfilePage() {
                 {/* Name Fields */}
                 <div className="space-y-4">
                   <h3 className="font-heading font-semibold text-[#1B2A72] text-sm uppercase tracking-wide">
-                    Personal Information
+                    {t.pages.profileEdit.sections.personal}
                   </h3>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="firstName" className="text-sm font-medium">
-                        First Name *
+                        {t.pages.profileEdit.fields.firstNameLabel}
                       </Label>
                       <Input
                         id="firstName"
                         value={formData.firstName}
                         onChange={(e) => updateField('firstName', e.target.value)}
-                        placeholder="Jane"
+                        placeholder={t.pages.profileEdit.fields.firstNamePlaceholder}
                         className="border-[1.5px] border-[var(--border)] rounded-lg"
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="lastName" className="text-sm font-medium">
-                        Last Name *
+                        {t.pages.profileEdit.fields.lastNameLabel}
                       </Label>
                       <Input
                         id="lastName"
                         value={formData.lastName}
                         onChange={(e) => updateField('lastName', e.target.value)}
-                        placeholder="Smith"
+                        placeholder={t.pages.profileEdit.fields.lastNamePlaceholder}
                         className="border-[1.5px] border-[var(--border)] rounded-lg"
                       />
                     </div>
@@ -317,26 +321,26 @@ export default function EditProfilePage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="title" className="text-sm font-medium">
-                      Title / Position
+                      {t.pages.profileEdit.fields.titleLabel}
                     </Label>
                     <Input
                       id="title"
                       value={formData.title}
                       onChange={(e) => updateField('title', e.target.value)}
-                      placeholder="e.g., PhD Student, Research Fellow, Professor"
+                      placeholder={t.pages.profileEdit.fields.titlePlaceholder}
                       className="border-[1.5px] border-[var(--border)] rounded-lg"
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="institution" className="text-sm font-medium">
-                      Institution / University
+                      {t.pages.profileEdit.fields.institutionLabel}
                     </Label>
                     <Input
                       id="institution"
                       value={formData.institution}
                       onChange={(e) => updateField('institution', e.target.value)}
-                      placeholder="Al-Farabi Kazakh National University"
+                      placeholder={t.pages.profileEdit.fields.institutionPlaceholder}
                       className="border-[1.5px] border-[var(--border)] rounded-lg"
                     />
                   </div>
@@ -345,34 +349,34 @@ export default function EditProfilePage() {
                 {/* Profile Details */}
                 <div className="space-y-4 pt-4 border-t border-[var(--border)]">
                   <h3 className="font-heading font-semibold text-[#1B2A72] text-sm uppercase tracking-wide">
-                    Profile Details
+                    {t.pages.profileEdit.sections.details}
                   </h3>
 
                   <div className="space-y-2">
                     <Label htmlFor="specialization" className="text-sm font-medium">
-                      Specialization
+                      {t.pages.profileEdit.fields.specializationLabel}
                     </Label>
                     <Input
                       id="specialization"
                       value={formData.specialization}
                       onChange={(e) => updateField('specialization', e.target.value)}
-                      placeholder="e.g., Machine Learning, Biomedical Engineering"
+                      placeholder={t.pages.profileEdit.fields.specializationPlaceholder}
                       className="border-[1.5px] border-[var(--border)] rounded-lg"
                     />
                     <p className="text-xs text-[var(--text-muted)]">
-                      This appears as a tag on your profile card
+                      {t.pages.profileEdit.fields.specializationHelp}
                     </p>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="motivation" className="text-sm font-medium">
-                      Bio
+                      {t.pages.profileEdit.fields.bioLabel}
                     </Label>
                     <Textarea
                       id="motivation"
                       value={formData.motivation}
                       onChange={(e) => updateField('motivation', e.target.value)}
-                      placeholder="Tell us about yourself, your interests, and what you hope to achieve..."
+                      placeholder={t.pages.profileEdit.fields.bioPlaceholder}
                       rows={4}
                       className="border-[1.5px] border-[var(--border)] rounded-lg"
                     />
@@ -380,14 +384,14 @@ export default function EditProfilePage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="linkedin" className="text-sm font-medium">
-                      LinkedIn URL
+                      {t.pages.profileEdit.fields.linkedinLabel}
                     </Label>
                     <Input
                       id="linkedin"
                       type="url"
                       value={formData.linkedinUrl}
                       onChange={(e) => updateField('linkedinUrl', e.target.value)}
-                      placeholder="https://linkedin.com/in/yourprofile"
+                      placeholder={t.pages.profileEdit.fields.linkedinPlaceholder}
                       className="border-[1.5px] border-[var(--border)] rounded-lg"
                     />
                   </div>
@@ -396,7 +400,7 @@ export default function EditProfilePage() {
                 {/* Contact Email (Read-only) */}
                 <div className="space-y-4 pt-4 border-t border-[var(--border)]">
                   <h3 className="font-heading font-semibold text-[#1B2A72] text-sm uppercase tracking-wide">
-                    Account Information
+                    {t.pages.profileEdit.sections.account}
                   </h3>
 
                   <div className="bg-[#F5F5FB] rounded-lg p-4">
@@ -404,7 +408,7 @@ export default function EditProfilePage() {
                       <Mail className="w-5 h-5 text-[var(--text-muted)]" />
                       <div>
                         <Label className="text-sm font-medium text-[var(--text-muted)]">
-                          Email Address
+                          {t.pages.profileEdit.fields.emailLabel}
                         </Label>
                         <p className="text-sm text-[#1B2A72] font-medium">
                           {profile?.email}
@@ -412,7 +416,7 @@ export default function EditProfilePage() {
                       </div>
                     </div>
                     <p className="text-xs text-[var(--text-muted)] mt-2">
-                      Contact support if you need to change your email address
+                      {t.pages.profileEdit.fields.emailHelp}
                     </p>
                   </div>
 
@@ -423,10 +427,12 @@ export default function EditProfilePage() {
                           ? 'bg-purple-100 text-purple-700'
                           : 'bg-blue-100 text-blue-700'
                       }`}>
-                        {profile?.role === 'mentor' ? 'Mentor' : 'Mentee'}
+                        {profile?.role === 'mentor'
+                          ? t.pages.register.roleMentor
+                          : t.pages.register.roleMentee}
                       </div>
                       <p className="text-sm text-[var(--text-muted)]">
-                        Your account role
+                        {t.pages.profileEdit.fields.roleHelp}
                       </p>
                     </div>
                   </div>
@@ -440,7 +446,7 @@ export default function EditProfilePage() {
                     disabled={isSaving}
                     className="flex-1 border-[var(--border)] text-[var(--text-secondary)] hover:bg-[#F5F5FB] rounded-lg"
                   >
-                    Cancel
+                    {t.pages.profileEdit.actions.cancel}
                   </Button>
                   <Button
                     onClick={handleSave}
@@ -450,10 +456,10 @@ export default function EditProfilePage() {
                     {isSaving ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Saving...
+                        {t.pages.profileEdit.actions.saving}
                       </>
                     ) : (
-                      'Save Changes'
+                      t.pages.profileEdit.actions.saveChanges
                     )}
                   </Button>
                 </div>

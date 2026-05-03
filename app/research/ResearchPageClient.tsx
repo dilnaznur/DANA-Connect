@@ -94,7 +94,7 @@ export default function ResearchPageClient({ opportunities }: ResearchPageClient
 
     const opp = opportunities.find((o) => o.id === applyId) || null
     if (!opp) {
-      toast.error('Opportunity not found')
+      toast.error(t.dashboard.toasts.opportunityNotFound)
       return
     }
 
@@ -123,7 +123,7 @@ export default function ResearchPageClient({ opportunities }: ResearchPageClient
 
     const opp = opportunities.find((o) => o.id === oppId) || null
     if (!opp) {
-      toast.error('Opportunity not found')
+      toast.error(t.dashboard.toasts.opportunityNotFound)
       return
     }
 
