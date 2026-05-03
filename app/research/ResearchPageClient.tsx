@@ -1,15 +1,27 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { NavBar } from '@/components/NavBar'
 import { Footer } from '@/components/Footer'
 import { HeroBackground } from '@/components/HeroBackground'
 import { OpportunityCard } from '@/components/OpportunityCard'
 import { Button } from '@/components/ui/button'
-import { useRouter } from 'next/navigation'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { translations } from '@/lib/i18n/translations'
+import { Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface OpportunityWithMentor {
   id: string
@@ -27,10 +39,22 @@ interface ResearchPageClientProps {
 }
 
 export default function ResearchPageClient({ opportunities }: ResearchPageClientProps) {
+  const supabase = createClient()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { language } = useLanguage()
   const t = translations[language]
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
+
+  const [userId, setUserId] = useState<string | null>(null)
+  const [isAuthReady, setIsAuthReady] = useState(false)
+
+  // Apply dialog state (same UX as dashboard)
+  const [selectedOpp, setSelectedOpp] = useState<OpportunityWithMentor | null>(null)
+  const [motivationText, setMotivationText] = useState('')
+  const [cvFile, setCvFile] = useState<File | null>(null)
+  const [cvError, setCvError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Collect all unique tags
   const allTags = useMemo(() => {
@@ -47,8 +71,153 @@ export default function ResearchPageClient({ opportunities }: ResearchPageClient
     return opportunities.filter((opp) => opp.tags?.includes(selectedTag))
   }, [opportunities, selectedTag])
 
-  const handleApply = (oppId: string) => {
-    router.push(`/login?redirect=/research&apply=${oppId}`)
+  useEffect(() => {
+    const initAuth = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      setUserId(user?.id ?? null)
+      setIsAuthReady(true)
+    }
+    initAuth()
+  }, [supabase])
+
+  // If user lands on /research?apply=... (e.g., after login), auto-open the dialog.
+  useEffect(() => {
+    const applyId = searchParams.get('apply')
+    if (!applyId || !isAuthReady) return
+
+    if (!userId) {
+      router.push(`/login?redirect=${encodeURIComponent(`/research?apply=${applyId}`)}`)
+      return
+    }
+
+    const opp = opportunities.find((o) => o.id === applyId) || null
+    if (!opp) {
+      toast.error('Opportunity not found')
+      return
+    }
+
+    setSelectedOpp(opp)
+    setMotivationText('')
+    setCvFile(null)
+    setCvError('')
+  }, [searchParams, isAuthReady, userId, opportunities, router, t])
+
+  const handleApply = async (oppId: string) => {
+    let resolvedUserId = userId
+
+    if (!isAuthReady) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      resolvedUserId = user?.id ?? null
+      setUserId(resolvedUserId)
+      setIsAuthReady(true)
+    }
+
+    if (!resolvedUserId) {
+      router.push(`/login?redirect=${encodeURIComponent(`/research?apply=${oppId}`)}`)
+      return
+    }
+
+    const opp = opportunities.find((o) => o.id === oppId) || null
+    if (!opp) {
+      toast.error('Opportunity not found')
+      return
+    }
+
+    setSelectedOpp(opp)
+    setMotivationText('')
+    setCvFile(null)
+    setCvError('')
+  }
+
+  const handleCvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    setCvError('')
+
+    if (!file) {
+      setCvFile(null)
+      return
+    }
+
+    const allowedExtensions = ['pdf', 'doc', 'docx']
+    const fileExt = file.name.split('.').pop()?.toLowerCase()
+
+    if (!fileExt || !allowedExtensions.includes(fileExt)) {
+      setCvFile(null)
+      setCvError(t.dashboard.validation.onlyPdfDocDocxAllowed)
+      return
+    }
+
+    const maxBytes = 5 * 1024 * 1024
+    if (file.size > maxBytes) {
+      setCvFile(null)
+      setCvError(t.dashboard.validation.fileSizeMax5mb)
+      return
+    }
+
+    setCvFile(file)
+  }
+
+  const handleSubmitApplication = async () => {
+    if (!userId || !selectedOpp) return
+
+    if (motivationText.length < 100) {
+      toast.error(t.dashboard.toasts.appliedMinChars)
+      return
+    }
+
+    setIsSubmitting(true)
+
+    let cvPath: string | null = null
+
+    if (cvFile) {
+      const fileExt = cvFile.name.split('.').pop()?.toLowerCase()
+      if (!fileExt) {
+        toast.error(t.dashboard.toasts.invalidCvFileFormat)
+        setIsSubmitting(false)
+        return
+      }
+
+      const filePath = `${userId}/${selectedOpp.id}.${fileExt}`
+      const { error: uploadError } = await supabase.storage
+        .from('cvs')
+        .upload(filePath, cvFile, { upsert: true })
+
+      if (uploadError) {
+        toast.error(uploadError.message)
+        setIsSubmitting(false)
+        return
+      }
+
+      cvPath = filePath
+    }
+
+    const { error } = await supabase.from('applications').insert({
+      mentee_id: userId,
+      opportunity_id: selectedOpp.id,
+      motivation_text: motivationText.trim(),
+      cv_url: cvPath,
+      status: 'pending',
+    })
+
+    if (error) {
+      if (error.code === '23505') {
+        toast.error(t.dashboard.toasts.alreadyApplied)
+      } else {
+        toast.error(error.message)
+      }
+    } else {
+      toast.success(t.dashboard.toasts.applicationSubmitted)
+      setSelectedOpp(null)
+      setMotivationText('')
+      setCvFile(null)
+      setCvError('')
+    }
+
+    setIsSubmitting(false)
   }
 
   return (
@@ -152,6 +321,98 @@ export default function ResearchPageClient({ opportunities }: ResearchPageClient
       </section>
 
       <Footer />
+
+      {/* Application Dialog (Research page) */}
+      <Dialog
+        open={!!selectedOpp}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedOpp(null)
+            setCvFile(null)
+            setCvError('')
+          }
+        }}
+      >
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-heading">
+              {t.dashboard.dialogs.applyTo}: {selectedOpp?.title}
+            </DialogTitle>
+            <DialogDescription className="text-[var(--text-secondary)]">
+              {t.dashboard.status.mentor}: {selectedOpp?.mentor?.full_name}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-4">
+            <div className="bg-hero rounded-lg p-4 max-h-40 overflow-y-auto">
+              <p className="text-sm text-[var(--text-secondary)]">
+                {selectedOpp?.description}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="motivation">{t.dashboard.dialogs.whyJoin}</Label>
+              <Textarea
+                id="motivation"
+                value={motivationText}
+                onChange={(e) => setMotivationText(e.target.value)}
+                placeholder={t.dashboard.dialogs.motivationPlaceholder}
+                rows={6}
+                className="border-[1.5px] border-[var(--border)] rounded-lg"
+              />
+              <p
+                className={`text-sm ${
+                  motivationText.length >= 100 ? 'text-green-600' : 'text-red-500'
+                }`}
+              >
+                {motivationText.length} {t.dashboard.dialogs.characters}
+                {motivationText.length < 100 && ` (${t.dashboard.dialogs.minimum100})`}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cvFile">{t.dashboard.dialogs.attachCvOptional}</Label>
+              <input
+                id="cvFile"
+                type="file"
+                accept=".pdf,.doc,.docx"
+                onChange={handleCvChange}
+                className="block w-full text-sm text-[var(--text-secondary)] file:mr-4 file:rounded-lg file:border file:border-[var(--border)] file:bg-white file:px-3 file:py-2 file:text-sm file:font-medium file:text-[var(--primary)] hover:file:bg-hero"
+              />
+              {cvFile && (
+                <p className="text-sm text-[var(--text-secondary)]">
+                  {t.dashboard.dialogs.selectedFile} {cvFile.name}
+                </p>
+              )}
+              {cvError && <p className="text-sm text-red-600">{cvError}</p>}
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setSelectedOpp(null)}
+                className="border-[var(--border)]"
+              >
+                {t.common.cancel}
+              </Button>
+              <Button
+                onClick={handleSubmitApplication}
+                disabled={isSubmitting || motivationText.length < 100}
+                className="bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white rounded-lg"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {t.dashboard.actions.submitting}
+                  </>
+                ) : (
+                  t.dashboard.actions.submitApplication
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

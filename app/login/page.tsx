@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { HeroBackground } from '@/components/HeroBackground'
@@ -41,8 +41,9 @@ function LogoIcon({ className }: { className?: string }) {
   )
 }
 
-export default function LoginPage() {
+function LoginPageInner() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { language } = useLanguage()
   const t = translations[language]
 
@@ -75,6 +76,19 @@ export default function LoginPage() {
     } = await supabase.auth.getUser()
 
     if (user) {
+      const redirectTo = searchParams.get('redirect')
+      const isSafeRedirect =
+        !!redirectTo &&
+        redirectTo.startsWith('/') &&
+        !redirectTo.startsWith('//') &&
+        !redirectTo.includes('\n') &&
+        !redirectTo.includes('\r')
+
+      if (isSafeRedirect) {
+        router.push(redirectTo)
+        return
+      }
+
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
@@ -141,6 +155,15 @@ export default function LoginPage() {
                 </div>
               </div>
 
+              <div className="flex justify-end">
+                <Link
+                  href="/forgot-password"
+                  className="text-sm text-[#1B2A72] hover:text-[#2d3f99] font-semibold transition-colors"
+                >
+                  {t.pages.login.forgotPassword}
+                </Link>
+              </div>
+
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg px-4 py-3">
                   {error}
@@ -185,5 +208,13 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageInner />
+    </Suspense>
   )
 }
