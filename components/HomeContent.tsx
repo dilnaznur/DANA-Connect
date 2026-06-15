@@ -8,7 +8,6 @@ import { OpportunityCard } from '@/components/OpportunityCard'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { translations } from '@/lib/i18n/translations'
-import { Users, TrendingUp, Building2, FlaskConical } from 'lucide-react'
 
 type Mentor = {
   id: string
@@ -211,59 +210,6 @@ export function HomeContent({
               <p className="text-[var(--text-secondary)] text-lg">{t.common.noResearchYet}</p>
             </div>
           )}
-        </div>
-      </section>
-
-      {/* Why It Matters Section - centered */}
-      <section className="py-16 sm:py-24 lg:py-30 bg-[#EEEDF8]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <span className="section-label">{t.mission.label}</span>
-            <h2 className="font-heading text-3xl sm:text-[36px] lg:text-[42px] font-extrabold text-[#1B2A72] mb-5 sm:mb-6">
-              {t.mission.title}
-            </h2>
-            <p className="text-lg sm:text-xl text-[var(--text-secondary)] leading-relaxed max-w-3xl mx-auto">
-              {t.mission.description}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Stat Card 1 */}
-            <div className="bg-white border border-[var(--border)] rounded-2xl p-4 sm:p-6 text-center">
-              <div className="w-12 h-12 bg-[#EEEDF8] rounded-xl flex items-center justify-center mx-auto mb-4">
-                <Users className="w-6 h-6 text-[#1B2A72]" />
-              </div>
-              <div className="font-heading text-4xl lg:text-5xl font-extrabold text-[#1B2A72] mb-2">30%</div>
-              <p className="text-[var(--text-secondary)] text-sm">{t.mission.stats.researchersWomen}</p>
-            </div>
-
-            {/* Stat Card 2 */}
-            <div className="bg-white border border-[var(--border)] rounded-2xl p-4 sm:p-6 text-center">
-              <div className="w-12 h-12 bg-[#EEEDF8] rounded-xl flex items-center justify-center mx-auto mb-4">
-                <TrendingUp className="w-6 h-6 text-[#1B2A72]" />
-              </div>
-              <div className="font-heading text-4xl lg:text-5xl font-extrabold text-[#1B2A72] mb-2">2x</div>
-              <p className="text-[var(--text-secondary)] text-sm">{t.mission.stats.retention}</p>
-            </div>
-
-            {/* Stat Card 3 */}
-            <div className="bg-white border border-[var(--border)] rounded-2xl p-4 sm:p-6 text-center">
-              <div className="w-12 h-12 bg-[#EEEDF8] rounded-xl flex items-center justify-center mx-auto mb-4">
-                <Building2 className="w-6 h-6 text-[#1B2A72]" />
-              </div>
-              <div className="font-heading text-4xl lg:text-5xl font-extrabold text-[#1B2A72] mb-2">45+</div>
-              <p className="text-[var(--text-secondary)] text-sm">{t.mission.stats.universities}</p>
-            </div>
-
-            {/* Stat Card 4 */}
-            <div className="bg-white border border-[var(--border)] rounded-2xl p-4 sm:p-6 text-center">
-              <div className="w-12 h-12 bg-[#EEEDF8] rounded-xl flex items-center justify-center mx-auto mb-4">
-                <FlaskConical className="w-6 h-6 text-[#1B2A72]" />
-              </div>
-              <div className="font-heading text-4xl lg:text-5xl font-extrabold text-[#1B2A72] mb-2">120+</div>
-              <p className="text-[var(--text-secondary)] text-sm">{t.mission.stats.institutions}</p>
-            </div>
-          </div>
         </div>
       </section>
 

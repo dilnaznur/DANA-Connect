@@ -253,12 +253,6 @@ export const translations = {
       apply: 'Apply',
       description:
         'Women remain underrepresented in STEM fields across Kazakhstan and Central Asia. DANA Connect bridges the gap by creating meaningful connections between experienced professionals and aspiring scientists, fostering the next generation of women leaders in science and technology.',
-      stats: {
-        researchersWomen: 'of researchers in Kazakhstan are women',
-        retention: 'higher retention with mentorship',
-        universities: 'universities across Kazakhstan',
-        institutions: 'research institutions in the region',
-      },
     },
     faq: {
       title: 'FAQ — DANA Connect',
@@ -816,12 +810,6 @@ export const translations = {
       apply: 'Подать заявку',
       description:
         'Женщины по‑прежнему недостаточно представлены в STEM-направлениях в Казахстане и Центральной Азии. DANA Connect помогает сократить этот разрыв, создавая содержательные связи между опытными профессионалами и начинающими учёными, поддерживая новое поколение женщин‑лидеров в науке и технологиях.',
-      stats: {
-        researchersWomen: 'исследователей в Казахстане — женщины',
-        retention: 'выше удержание при наставничестве',
-        universities: 'университетов по Казахстану',
-        institutions: 'научных институтов в регионе',
-      },
     },
     faq: {
       title: 'FAQ — DANA Connect',
@@ -1380,12 +1368,6 @@ export const translations = {
       apply: 'Өтінім беру',
       description:
         'Қазақстан мен Орталық Азияда STEM салаларында әйелдердің үлесі әлі де төмен. DANA Connect тәжірибелі мамандар мен жас зерттеушілерді байланыстырып, ғылым мен технологиядағы әйел көшбасшылардың келесі буынын қолдай отырып, осы алшақтықты азайтуға көмектеседі.',
-      stats: {
-        researchersWomen: 'Қазақстандағы зерттеушілердің әйелдер үлесі',
-        retention: 'тәлімгерлікпен ұстап қалу жоғары',
-        universities: 'Қазақстандағы университеттер',
-        institutions: 'аймақтағы ғылыми мекемелер',
-      },
     },
     faq: {
       title: 'FAQ — DANA Connect',
